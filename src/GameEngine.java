@@ -1,6 +1,6 @@
 import java.util.*;
 public class GameEngine implements Runnable{
-    private ArrayList<Player> playerList;
+    private final ArrayList<Player> playerList;
     private int cumulativeTotal;
     
     public GameEngine(){

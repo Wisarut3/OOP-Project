@@ -3,7 +3,7 @@ import java.io.*;
 public abstract class Player implements Serializable{
 //    private int ID;
 //    private double winrate;
-    private String username;
+    protected String username;
     protected int money, score;
     protected ArrayList<Card> cardList = new ArrayList<>();
     protected int[] target = new int[2];
@@ -27,6 +27,10 @@ public abstract class Player implements Serializable{
     
     public void setTarget(int index, int target){
         this.target[index] = target;
+    }
+    
+    public String getUsername(){
+        return username;
     }
 
     public abstract boolean buyItem(EffectCard c);
