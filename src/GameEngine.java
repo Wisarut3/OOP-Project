@@ -63,6 +63,7 @@ public class GameEngine implements Runnable{
         for(Player p: playerList){
             Card calculating = p.selectMove();
             calculateEffect(p, calculating, calculating.getType());
+            p.addMoney(5);
         }
         zero = false;
         System.out.println("Total points on the table = " + cumulativeTotal);
