@@ -3,6 +3,8 @@ import java.awt.*;
 import java.sql.*;
 
 public class LoginForm extends JFrame {
+    public static String currentUsername = ""; 
+
     private JTextField txtUser;
     private JPasswordField txtPass;
     private JButton btnLogin;
@@ -10,15 +12,15 @@ public class LoginForm extends JFrame {
 
     public LoginForm() {
         setTitle("Login System");
-        setSize(350, 200);
+        setSize(350, 250);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new GridLayout(4, 2, 10, 10));
 
-        add(new JLabel(" Username:"));
+        add(new JLabel("  Username:"));
         txtUser = new JTextField();
         add(txtUser);
 
-        add(new JLabel(" Password:"));
+        add(new JLabel("  Password:"));
         txtPass = new JPasswordField();
         add(txtPass);
 
@@ -44,17 +46,26 @@ public class LoginForm extends JFrame {
             pstmt.setString(2, new String(txtPass.getPassword()));
 
             ResultSet rs = pstmt.executeQuery();
+            
             if (rs.next()) {
-                JOptionPane.showMessageDialog(this, "Login Success!");
+                currentUsername = txtUser.getText();
+                JOptionPane.showMessageDialog(this, "Login Success! Welcome " + currentUsername);
+                new MainPage().setVisible(true);
+                this.dispose();
             } else {
-                JOptionPane.showMessageDialog(this, "Invalid Username or Password");
+                JOptionPane.showMessageDialog(this, "Invalid Username or Password!");
             }
         } catch (Exception ex) {
             ex.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Database Error: " + ex.getMessage());
         }
     }
 
     public static void main(String[] args) {
+        try {
+            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+        } catch (Exception e) {}
+
         new LoginForm().setVisible(true);
     }
 }
