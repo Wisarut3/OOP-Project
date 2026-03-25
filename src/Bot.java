@@ -13,6 +13,7 @@ public class Bot extends Player {
     @Override
     public boolean buyItem(String efc) {
         if (money >= 5) {
+            money -= 5;
             if (efc.equals("Negative")) {
                 efcList.add(new Negative());
             } else if (efc.equals("Zero")) {
@@ -28,25 +29,21 @@ public class Bot extends Player {
         Random rand = new Random();
         int index = rand.nextInt(cardList.size());
         String effect;
-        if(effectUsed < MAX_EFFECT){
-            String[] effects = {"none", "negative", "zero"};
-            effect = effects[rand.nextInt(3)];
+        if(effectUsed < MAX_EFFECT && money >= 5){
+            String[] effects = {"Negative", "Zero"};
+            effect = effects[rand.nextInt(2)];
+            buyItem(effect);
         } else {
-            effect = "none";
+            effect = "None";
         }
-        Card using ;
-        if(effect.equals("negative")){
-            using = cardList.remove(index);
-            using.setType(new Negative());
+        Card using = cardList.remove(index);
+        if(effect.equals("Negative")){
+            using.setType(efcList.remove(0));
             effectUsed++;
         }
-        else if(effect.equals("zero")){
-            using = cardList.remove(index);
-            using.setType(new Zero());
+        else if(effect.equals("Zero")){
+            using.setType(efcList.remove(0));
             effectUsed++;
-        }
-        else{
-            using = cardList.remove(index);
         }
         return using;
    }
