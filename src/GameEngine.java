@@ -6,8 +6,8 @@ public class GameEngine implements Runnable{
     
     public GameEngine(){
         playerList = new ArrayList<>();
-        playerList.add(new Human());
-        playerList.add(new Human());
+        playerList.add(new Bot());
+        playerList.add(new Bot());
         playerList.add(new Human());
         
         zero = false;
