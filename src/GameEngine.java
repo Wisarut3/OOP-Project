@@ -2,6 +2,7 @@ import java.util.*;
 public class GameEngine implements Runnable{
     private final ArrayList<Player> playerList;
     private int cumulativeTotal;
+    private boolean zero;
     
     public GameEngine(){
         playerList = new ArrayList<>();
@@ -9,6 +10,7 @@ public class GameEngine implements Runnable{
         playerList.add(new Human());
         playerList.add(new Human());
         
+        zero = false;
         Random rand = new Random();
         for(Player player: playerList){
             player.setTarget(0, rand.nextInt(0, 11));
@@ -19,9 +21,23 @@ public class GameEngine implements Runnable{
         }
     }
     
+    public void setZero(){
+        cumulativeTotal = 0;
+        zero = true;
+    }
+    
+    public void addTotal(int score){
+        if(zero == false){
+            cumulativeTotal += score;
+        }
+    }
+    
     public void calculateEffect(Player p, Card c, EffectCard efc){
+        if(efc == null){
+            addTotal(c.getValue());
+            return;
+        }
         efc.applyEffect(this, p, c);
-        cumulativeTotal += c.getValue();
     }
     
     public void addScore(ArrayList<Player> p){
@@ -29,6 +45,7 @@ public class GameEngine implements Runnable{
         System.out.println("Player " + (playerList.indexOf(p.get(0)) + 1) + " got 2 points");
         p.get(1).addScore(1);
         System.out.println("Player " + (playerList.indexOf(p.get(1)) + 1)+ " got 1 points");
+        System.out.println("");
     }
     
     public void calculateScore(){
@@ -47,6 +64,7 @@ public class GameEngine implements Runnable{
             Card calculating = p.selectMove();
             calculateEffect(p, calculating, calculating.getType());
         }
+        zero = false;
         System.out.println("Total points on the table = " + cumulativeTotal);
         calculateScore();
     }
@@ -56,6 +74,7 @@ public class GameEngine implements Runnable{
         for(int i = 0; i < 5; i++){
             calculateRound();
         }
+        System.out.println("");
         System.out.println("Total score:");
         for(int i = 0; i < playerList.size(); i++){
             System.out.println("Player " + (i + 1) + " got " + playerList.get(i).getScore() + " points");

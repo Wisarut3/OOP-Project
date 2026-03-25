@@ -14,4 +14,8 @@ public class Card implements Serializable{
     public EffectCard getType(){
         return type;
     }
+    
+    public void setType(EffectCard efc){
+        this.type = efc;
+    }
 }
