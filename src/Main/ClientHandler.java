@@ -1,8 +1,11 @@
+package Main;
+
 import java.net.*;
 import java.io.*;
 import java.util.concurrent.SynchronousQueue;
 
 public class ClientHandler implements Runnable {
+
     private final Socket socket;
     private ObjectOutputStream out;
     private ObjectInputStream in;
@@ -17,7 +20,7 @@ public class ClientHandler implements Runnable {
         try {
             out = new ObjectOutputStream(socket.getOutputStream());
             out.flush();
-            in  = new ObjectInputStream(socket.getInputStream());
+            in = new ObjectInputStream(socket.getInputStream());
         } catch (IOException e) {
             System.err.println("[ClientHandler] Failed to open streams: " + e.getMessage());
             running = false;
@@ -45,8 +48,9 @@ public class ClientHandler implements Runnable {
     }
 
     // ---- API ที่ GameEngine / GameServer
-
-    /** ส่ง GameMessage client */
+    /**
+     * ส่ง GameMessage client
+     */
     public synchronized void send(GameMessage msg) {
         try {
             out.writeObject(msg);
@@ -58,7 +62,6 @@ public class ClientHandler implements Runnable {
         }
     }
 
-
     public GameMessage waitForMove() {
         try {
             return moveQueue.take(); // block
@@ -68,10 +71,15 @@ public class ClientHandler implements Runnable {
         }
     }
 
-    public boolean isRunning() { return running; }
+    public boolean isRunning() {
+        return running;
+    }
 
     public void close() {
         running = false;
-        try { socket.close(); } catch (IOException ignored) {}
+        try {
+            socket.close();
+        } catch (IOException ignored) {
+        }
     }
 }

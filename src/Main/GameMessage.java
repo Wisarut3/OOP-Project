@@ -1,3 +1,4 @@
+package Main;
 
 import java.io.Serializable;
 
@@ -43,6 +44,7 @@ public class GameMessage implements Serializable {
     // GAME_OVER
     private String[] playerNames;
     private int[] finalScores;
+
     private GameMessage(Type type) {
         this.type = type;
     }

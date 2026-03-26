@@ -1,3 +1,4 @@
+package Main;
 import java.io.*;
 public class Card implements Serializable{
     private final int value;
