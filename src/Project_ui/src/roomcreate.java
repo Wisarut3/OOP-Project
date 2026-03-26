@@ -14,7 +14,7 @@ public class roomcreate extends JFrame {
         setContentPane(bg);
         bg.setLayout(null);
 
-        ImageIcon originalIcon = new ImageIcon("logo.png");
+        ImageIcon originalIcon = new ImageIcon("src\\Project_ui\\logo.png");
         JLabel logoLabel = new JLabel(originalIcon);
         bg.add(logoLabel);
 
@@ -59,8 +59,8 @@ public class roomcreate extends JFrame {
         int effectiveHeight = cardHeight - overlap;
 
         public BackgroundPanel() {
-            bgImg = new ImageIcon("loginbg.png").getImage();
-            cardImg = new ImageIcon("cardsblur.png").getImage();
+            bgImg = new ImageIcon("src\\Project_ui\\loginbg.png").getImage();
+            cardImg = new ImageIcon("src\\Project_ui\\cardsblur.png").getImage();
             new Timer(16, e -> {
                 y += 1;
                 if (y >= effectiveHeight) y = 0;
