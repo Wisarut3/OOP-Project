@@ -23,7 +23,7 @@ public class homepage extends JFrame {
         bg.add(userLabel);
         bg.add(winrateLabel);
 
-        ImageIcon originalIcon = new ImageIcon("src\\Project_ui\\logo.png");
+        ImageIcon originalIcon = new ImageIcon("logo.png");
         JLabel logoLabel = new JLabel(originalIcon);
         bg.add(logoLabel);
 
@@ -74,7 +74,7 @@ public class homepage extends JFrame {
 
     ////////////////// CUSTOM LABEL //////////////////
 
-    class InfoLabel extends JPanel {
+        class InfoLabel extends JPanel {
 
     private String text;
 
@@ -115,8 +115,8 @@ public class homepage extends JFrame {
 
         public BackgroundPanel() {
 
-            bgImg = new ImageIcon("src\\Project_ui\\loginbg.png").getImage();
-            cardImg = new ImageIcon("src\\Project_ui\\cardsblur.png").getImage();
+            bgImg = new ImageIcon("loginbg.png").getImage();
+            cardImg = new ImageIcon("cardsblur.png").getImage();
 
             new Timer(16, e -> {
                 y += 1;
