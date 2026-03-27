@@ -5,7 +5,7 @@ import java.awt.geom.RoundRectangle2D;
 
 public class homepage extends JFrame {
 
-    public homepage() {
+    public homepage(String user, String gamewin) {
 
         // Fullscreen window
         setUndecorated(true);
@@ -19,8 +19,8 @@ public class homepage extends JFrame {
 
         ////////////////// UI ELEMENTS //////////////////
 
-        InfoLabel userLabel = new InfoLabel("User : XXXXXX");
-        InfoLabel winrateLabel = new InfoLabel("Winrate : 00%");
+        InfoLabel userLabel = new InfoLabel("User : " + user);
+        InfoLabel winrateLabel = new InfoLabel("Games won : " + gamewin);
         bg.add(userLabel);
         bg.add(winrateLabel);
 
@@ -233,7 +233,7 @@ public class homepage extends JFrame {
 
     ////////////////// ENTRY POINT //////////////////
 
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> new homepage().setVisible(true));
-    }
+//    public static void main(String[] args) {
+//        SwingUtilities.invokeLater(() -> new homepage().setVisible(true));
+//    }
 }

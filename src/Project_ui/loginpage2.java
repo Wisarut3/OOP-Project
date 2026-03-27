@@ -1,4 +1,5 @@
 package Project_ui;
+import Database.DB;
 import javax.swing.*;
 import javax.swing.border.AbstractBorder;
 import java.awt.*;
@@ -158,11 +159,29 @@ public class loginpage2 extends JFrame {
         JButton btnL = createStyledButton("Login", new Color(120, 0, 0));
         btnL.setBounds(50, 250, 300, 50);
         panel.add(btnL);
+        btnL.addActionListener(e -> {
+            String user = uF.getText();
+            String pass = pF.getText();
+            new Thread(() -> {
+                int wins = DB.checkLogin(user, pass);
+                if(wins > -1){
+                    new homepage(user, String.valueOf(wins)).setVisible(true);
+                    setVisible(false);
+                }
+            }).start();
+        });
 
-        JButton btnS = createStyledButton("Signin", new Color(90, 0, 0));
+        JButton btnS = createStyledButton("Sign In", new Color(90, 0, 0));
         btnS.setBounds(50, 320, 300, 50);
         panel.add(btnS);
-
+        btnS.addActionListener(e -> {
+            String user = uF.getText();
+            String pass = pF.getText();
+            new Thread(() -> {
+            DB.saveToDatabase(user, pass);
+            }).start();
+        });
+        
         return panel;
     }
 
