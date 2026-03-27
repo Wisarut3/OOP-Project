@@ -168,10 +168,18 @@ public class homepage extends JFrame {
 
         JButton btnL = createStyledButton("Play with Bot", new Color(120, 0, 0));
         btnL.setBounds(50, 150, 300, 50);
+        btnL.addActionListener(e -> {
+            new playpage(this).setVisible(true);
+            setVisible(false);
+        });
         panel.add(btnL);
 
         JButton btnS = createStyledButton("Play with Friends", new Color(90, 0, 0));
         btnS.setBounds(50, 220, 300, 50);
+        btnS.addActionListener(e -> {
+            new roomcreate(this).setVisible(true);
+            setVisible(false);
+        });
         panel.add(btnS);
 
         return panel;
