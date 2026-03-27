@@ -395,9 +395,4 @@ public class playpage extends JFrame {
         return btn;
     }
 
-    ////////////////////////// MAIN /////////////////////////////////
-//
-//    public static void main(String[] args) {
-//        SwingUtilities.invokeLater(() -> new playpage().setVisible(true));
-//    }
 }

@@ -6,7 +6,7 @@ import java.awt.geom.RoundRectangle2D;
 
 public class roomcreate extends JFrame {
 
-    public roomcreate() {
+    public roomcreate(JFrame owner) {
         setUndecorated(true);
         setExtendedState(JFrame.MAXIMIZED_BOTH);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
@@ -188,9 +188,5 @@ public class roomcreate extends JFrame {
         RoundedBorder(int radius) { this.radius = radius; }
         @Override
         public Insets getBorderInsets(Component c) { return new Insets(5, 20, 5, 20); }
-    }
-
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> new roomcreate().setVisible(true));
     }
 }
