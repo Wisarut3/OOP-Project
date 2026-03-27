@@ -1,369 +1,217 @@
+package Project_ui;
 import javax.swing.*;
+import javax.swing.border.AbstractBorder;
 import java.awt.*;
-import java.awt.event.*;
 import java.awt.geom.RoundRectangle2D;
 
-public class playpage extends JFrame {
+public class loginpage2 extends JFrame {
 
-    private int selectedValue = -1;
-    public int getSelectedCardValue() { return selectedValue; }
+    public loginpage2() {
 
-    // UI
-    public JLabel target1Label, target2Label;
-    public JLabel moneyLabel, squadStatusLabel, scoreLabel;
-
-    // CARD STATE
-    private CardUI currentSelectedCard = null;
-    
-    private final Color COLOR_PANEL = new Color(30, 30, 30, 220);
-    private final Color COLOR_ACCENT = new Color(120, 0, 0);
-    private final Color COLOR_RED = new Color(180, 0, 0);
-
-
-    public playpage() {
-
+        // fullscreen
         setUndecorated(true);
         setExtendedState(JFrame.MAXIMIZED_BOTH);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
 
-        // link engine ****
-        target1Label = new JLabel("100");
-        target2Label = new JLabel("200");
-        moneyLabel = new JLabel("$5,000");
-        scoreLabel = new JLabel("0", JLabel.CENTER); // ผมรวมเลข ลิ้ง engine
-        scoreLabel.setText("XX"); // ผมรวมเลข ลิ้ง engine
+        BackgroundPanel bg = new BackgroundPanel();
+        setContentPane(bg);
+        bg.setLayout(null);
 
-        // main BACKGROUND 
-        BackgroundPanel mainBg = new BackgroundPanel();
-        mainBg.setLayout(new BorderLayout(20, 20));
-        mainBg.setBorder(BorderFactory.createEmptyBorder(20, 30, 20, 30));
-        setContentPane(mainBg);
+        ImageIcon originalIcon = new ImageIcon("logo.png");
+        JLabel logoLabel = new JLabel(originalIcon);
+        bg.add(logoLabel);
 
-        mainBg.add(createTopBar(), BorderLayout.NORTH);
-        mainBg.add(createMainLayout(), BorderLayout.CENTER);
-        mainBg.add(createBottomBar(), BorderLayout.SOUTH);
-    }
+        JButton closeBtn = new JButton("✕");
+        closeBtn.setForeground(Color.WHITE);
+        closeBtn.setBackground(new Color(255, 80, 80));
+        closeBtn.setFocusPainted(false);
+        closeBtn.setBorderPainted(false);
+        closeBtn.addActionListener(e -> System.exit(0));
+        bg.add(closeBtn);
 
-    ////////////////////////// 3-column layout /////////////////////////////
-    private JPanel createMainLayout() {
+        JPanel loginPanel = createLoginPanel();
+        int pWidth = 400;
+        int pHeight = 450;
+        bg.add(loginPanel);
 
-        JPanel grid = new JPanel(new GridLayout(1, 3, 30, 0));
-        grid.setOpaque(false);
+        ////////////////// RESIZE OK //////////////////
+        
+        bg.addComponentListener(new java.awt.event.ComponentAdapter() {
+            @Override
+            public void componentResized(java.awt.event.ComponentEvent evt) {
 
-        //LEFT 
-        JPanel leftCol = new JPanel(new GridLayout(2, 1, 0, 20));
-        leftCol.setOpaque(false);
+                int w = bg.getWidth();
+                int h = bg.getHeight();
 
-        RoundedPanel targetP = new RoundedPanel("YOUR TARGETS");
-        addInfoRow(targetP, "TARGET 1 :", target1Label);
-        addInfoRow(targetP, "TARGET 2 :", target2Label);
-        leftCol.add(targetP);
+                loginPanel.setBounds((w - pWidth) / 2, (h - pHeight) / 2 + 60, pWidth, pHeight);
 
-        RoundedPanel squadP = new RoundedPanel("SQUAD STATUS");
-        addInfoRow(squadP, "SOLO-PPP :", squadStatusLabel);
-        leftCol.add(squadP);
+                int logoW = 200;
+                int logoH = (originalIcon.getIconWidth() > 0)
+                        ? (logoW * originalIcon.getIconHeight()) / originalIcon.getIconWidth()
+                        : 100;
 
-        //CENTER
-        RoundedPanel midCol = new RoundedPanel("");
-        midCol.setLayout(new BorderLayout());
+                Image scaledLogo = originalIcon.getImage()
+                        .getScaledInstance(logoW, logoH, Image.SCALE_SMOOTH);
 
-        // Big score display
-        scoreLabel.setFont(new Font("Segoe UI", Font.BOLD, 150));
-        scoreLabel.setForeground(new Color(255, 80, 80));
-        midCol.add(scoreLabel, BorderLayout.CENTER);
+                logoLabel.setIcon(new ImageIcon(scaledLogo));
+                logoLabel.setBounds((w - logoW) / 2, (h - pHeight) / 2 - logoH, logoW, logoH);
 
-        // Execute button 
-        JButton btnExecute = createStyledButton("EXECUTE TURN", COLOR_ACCENT);
-        btnExecute.setPreferredSize(new Dimension(0, 60));
-
-        btnExecute.addActionListener(e -> {
-            System.out.println("EXECUTE TURN pressed");
-
-            if (selectedValue == -1) {
-                System.out.println("No card selected");
-            } else {
-                System.out.println("Using card: " + selectedValue);
-                // sent value to engine
+                closeBtn.setBounds(w - 50, 10, 50, 40);
             }
         });
-
-        midCol.add(btnExecute, BorderLayout.SOUTH);
-
-        //RIGHT
-        JPanel rightCol = new JPanel(new GridLayout(2, 1, 0, 20));
-        rightCol.setOpaque(false);
-
-        // Assets panel
-        RoundedPanel assetP = new RoundedPanel("ASSETS");
-        addInfoRow(assetP, "TOTAL WEALTH :", moneyLabel);
-
-        JButton shopBtn = createStyledButton("SHOP", COLOR_ACCENT);
-        shopBtn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 60));
-
-        shopBtn.addActionListener(e ->
-                System.out.println("SHOP pressed")
-        );
-
-        assetP.addContentRow(Box.createVerticalStrut(15));
-        assetP.addContentRow(shopBtn);
-
-        rightCol.add(assetP);
-
-        // Items panel
-        RoundedPanel itemP = new RoundedPanel("TACTICAL ITEMS");
-        addInfoRow(itemP, "ITEM SLOTS :", new JLabel("EMPTY"));
-        rightCol.add(itemP);
-
-        grid.add(leftCol);
-        grid.add(midCol);
-        grid.add(rightCol);
-
-        return grid;
     }
 
-    ////////////////////////// CARD BAR ///////////////////////////////
+    ////////////////// BACKGROUND ////////////////// for animation + custom draw
 
-    private JPanel createBottomBar() {
-
-        JPanel cardContainer = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 70));
-        cardContainer.setOpaque(false);
-        cardContainer.setPreferredSize(new Dimension(0, 300));
-
-        for (int i = 1; i <= 5; i++) {
-            cardContainer.add(new CardUI(i));
-        }
-
-        return cardContainer;
-    }
-
-    ////////////////////////// CARD CLASS /////////////////////////////
-    class CardUI extends JPanel {
-
-        private int value;
-        private boolean isSelected = false;
-        private Image cardBg;
-
-        public CardUI(int val) {
-            this.value = val;
-
-            //card background
-            cardBg = new ImageIcon("card_bg.png").getImage();
-
-            setPreferredSize(new Dimension(90, 130));
-            setOpaque(false);
-
-            //CLICK 
-            addMouseListener(new MouseAdapter() {
-                public void mouseClicked(MouseEvent e) {
-
-                    System.out.println("Card " + value + " clicked");
-
-                    if (isSelected) deselectCard();
-                    else {
-                        if (currentSelectedCard != null)
-                            currentSelectedCard.deselectCard();
-                        selectCard();
-                    }
-                }
-            });
-        }
-
-        
-        private void selectCard() {
-            isSelected = true;
-            currentSelectedCard = this;
-            selectedValue = value;
-            repaint();
-        }
-
-        
-        private void deselectCard() {
-            isSelected = false;
-
-            if (currentSelectedCard == this) {
-                currentSelectedCard = null;
-                selectedValue = -1;
-            }
-
-            repaint();
-        }
-
-        protected void paintComponent(Graphics g) {
-
-            super.paintComponent(g);
-            Graphics2D g2 = (Graphics2D) g.create();
-
-            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
-            int arc = 15;
-
-            // Draw rounded
-            if (cardBg != null) {
-                g2.setClip(new RoundRectangle2D.Float(0, 0, getWidth(), getHeight(), arc, arc));
-                g2.drawImage(cardBg, 0, 0, getWidth(), getHeight(), this);
-                g2.setClip(null);
-            }
-
-            //CARD NUMBE
-            String text = String.valueOf(value);
-            g2.setFont(new Font("Segoe UI", Font.BOLD, 30));
-
-            FontMetrics fm = g2.getFontMetrics();
-            int x = (getWidth() - fm.stringWidth(text)) / 2;
-            int y = (getHeight() + fm.getAscent()) / 2 - 5;
-
-            // Shadow
-            g2.setColor(new Color(0,0,0,150));
-            g2.drawString(text, x+2, y+2);
-
-            // Text
-            g2.setColor(Color.WHITE);
-            g2.drawString(text, x, y);
-
-            // SELECTED BORDER
-            if (isSelected) {
-                g2.setColor(COLOR_RED);
-                g2.setStroke(new BasicStroke(3));
-                g2.drawRoundRect(2, 2, getWidth()-4, getHeight()-4, arc, arc);
-            }
-
-            g2.dispose();
-        }
-    }
-
-    ////////////////////////// INFO ROW ///////////////////////////////
-    // label + value
-
-    private void addInfoRow(RoundedPanel panel, String title, JLabel valueLabel) {
-
-        JPanel row = new JPanel(new BorderLayout());
-        row.setOpaque(false);
-
-        JLabel tL = new JLabel(title);
-        tL.setForeground(Color.LIGHT_GRAY);
-
-        valueLabel.setForeground(Color.WHITE);
-
-        row.add(tL, BorderLayout.WEST);
-        row.add(valueLabel, BorderLayout.EAST);
-
-        panel.addContentRow(row);
-    }
-
-    ////////////////////////// TOP BAR ////////////////////////////////
-
-    private JPanel createTopBar() {
-
-        JPanel p = new JPanel(new BorderLayout());
-        p.setOpaque(false);
-
-        JButton backBtn = createStyledButton("←", new Color(80, 80, 80));
-        backBtn.addActionListener(e -> System.out.println("BACK pressed"));
-
-        JButton close = new JButton("✕");
-        close.setForeground(Color.WHITE);
-        close.setBackground(new Color(255, 80, 80));
-        close.setFocusPainted(false);
-        close.setBorderPainted(false);
-
-        close.addActionListener(e -> {
-            System.out.println("EXIT pressed");
-            System.exit(0);
-        });
-
-
-        p.add(backBtn, BorderLayout.WEST);
-        p.add(close, BorderLayout.EAST);
-
-        return p;
-    }
-
-    ////////////////////////// PANEL CLASS ////////////////////////////
-    // Custom rounded panel with title + content area
-    
-    class RoundedPanel extends JPanel {
-
-        private String title;
-        private JPanel inner = new JPanel();
-
-        public RoundedPanel(String title) {
-
-            this.title = title;
-
-            setOpaque(false);
-            setLayout(new BorderLayout());
-            setBorder(BorderFactory.createEmptyBorder(50, 15, 15, 15));
-
-            inner.setLayout(new BoxLayout(inner, BoxLayout.Y_AXIS));
-            inner.setOpaque(false);
-
-            add(inner, BorderLayout.CENTER);
-        }
-
-        public void addContentRow(Component c) {
-            inner.add(c);
-            inner.add(Box.createVerticalStrut(10));
-        }
-
-        protected void paintComponent(Graphics g) {
-
-            super.paintComponent(g);
-            Graphics2D g2 = (Graphics2D) g.create();
-
-            g2.setColor(COLOR_PANEL);
-            g2.fillRoundRect(0, 0, getWidth(), getHeight(), 30, 30);
-
-            g2.setColor(Color.WHITE);
-            if (!title.isEmpty()) g2.drawString(title, 25, 30);
-
-            g2.dispose();
-        }
-    }
-
-    ////////////////////////// BACKGROUND /////////////////////////////
-    // background image 
     class BackgroundPanel extends JPanel {
 
-        private Image bgImg = new ImageIcon("loginbg.png").getImage();
+        int y = 0;
 
+        Image bgImg = new ImageIcon("loginbg.png").getImage();
+        Image cardImg = new ImageIcon("cardsblur.png").getImage();
+
+        int cardHeight = 1000;
+        int overlap = 140;
+        int effectiveHeight = cardHeight - overlap;
+
+        public BackgroundPanel() {
+
+            // loop
+            new Timer(16, e -> {
+                y += 1;
+                if (y >= effectiveHeight) y = 0;
+                repaint();
+            }).start();
+        }
+
+        @Override
         protected void paintComponent(Graphics g) {
 
             super.paintComponent(g);
+            Graphics2D g2 = (Graphics2D) g.create();
 
-            g.drawImage(bgImg, 0, 0, getWidth(), getHeight(), this);
+            int w = getWidth();
+            int h = getHeight();
 
-            // Dark overlay for readability
-            g.setColor(new Color(0,0,0,120));
-            g.fillRect(0,0,getWidth(),getHeight());
+            g2.drawImage(bgImg, 0, 0, w, h, this);
+
+            int cardWidth = 350;
+
+            // loop card
+            g2.drawImage(cardImg, 50, y, cardWidth, cardHeight, this);
+            g2.drawImage(cardImg, 50, y - effectiveHeight, cardWidth, cardHeight, this);
+
+            g2.drawImage(cardImg, w - 50 - cardWidth, y, cardWidth, cardHeight, this);
+            g2.drawImage(cardImg, w - 50 - cardWidth, y - effectiveHeight, cardWidth, cardHeight, this);
+
+            g2.setColor(new Color(0, 0, 0, 100));
+            g2.fillRect(0, 0, w, h);
+
+            g2.dispose();
         }
     }
 
-    ////////////////////////// BUTTON STYLE ///////////////////////////
+    ////////////////// LOGIN PANEL ////////////////// for grouping UI
+
+    private JPanel createLoginPanel() {
+
+        JPanel panel = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+
+                Graphics2D g2 = (Graphics2D) g.create();
+
+                g2.setColor(new Color(150, 0, 0));
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 50, 50);
+
+                g2.setColor(new Color(210, 210, 210));
+                g2.fillRoundRect(5, 5, getWidth() - 10, getHeight() - 10, 45, 45);
+
+                g2.dispose();
+            }
+        };
+
+        panel.setOpaque(false);
+        panel.setLayout(null);
+
+        Font font = new Font("Segoe UI", Font.BOLD, 18);
+        int arc = 35;
+
+        JLabel uL = new JLabel("username");
+        uL.setBounds(50, 40, 150, 25);
+        uL.setFont(font);
+        panel.add(uL);
+
+        JTextField uF = createField(arc);
+        uF.setBounds(50, 70, 300, 40);
+        panel.add(uF);
+
+        JLabel pL = new JLabel("password");
+        pL.setBounds(50, 130, 150, 25);
+        pL.setFont(font);
+        panel.add(pL);
+
+        JTextField pF = createField(arc);
+        pF.setBounds(50, 160, 300, 40);
+        panel.add(pF);
+
+        JButton btnL = createStyledButton("Login", new Color(120, 0, 0));
+        btnL.setBounds(50, 250, 300, 50);
+        panel.add(btnL);
+
+        JButton btnS = createStyledButton("Signin", new Color(90, 0, 0));
+        btnS.setBounds(50, 320, 300, 50);
+        panel.add(btnS);
+
+        return panel;
+    }
+
+    ////////////////// FIELD ////////////////// for reusable rounded input
+
+    private JTextField createField(int arc) {
+
+        JTextField field = new JTextField() {
+            @Override
+            protected void paintComponent(Graphics g) {
+
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setColor(Color.WHITE);
+                g2.fillRoundRect(0, 0, getWidth() - 1, getHeight() - 1, arc, arc);
+                g2.dispose();
+
+                super.paintComponent(g);
+            }
+        };
+
+        field.setOpaque(false);
+        field.setBorder(new RoundedBorder(arc));
+
+        return field;
+    }
+
+    ////////////////// BUTTON ////////////////// for custom UI button
 
     private JButton createStyledButton(String text, Color color) {
 
         JButton btn = new JButton(text) {
-
+            @Override
             protected void paintComponent(Graphics g) {
 
                 Graphics2D g2 = (Graphics2D) g.create();
 
                 int arc = 40;
 
-                // Shadow layer
                 g2.setColor(color.darker());
-                g2.fillRoundRect(0, 2, getWidth(), getHeight()-2, arc, arc);
+                g2.fillRoundRect(0, 2, getWidth(), getHeight() - 2, arc, arc);
 
-                // Main button
                 g2.setColor(getBackground());
-                g2.fillRoundRect(0, 0, getWidth(), getHeight()-4, arc, arc);
+                g2.fillRoundRect(0, 0, getWidth(), getHeight() - 4, arc, arc);
 
-                // Text
                 g2.setColor(Color.WHITE);
                 FontMetrics fm = g2.getFontMetrics();
 
-                int x = (getWidth()-fm.stringWidth(getText()))/2;
-                int y = (getHeight()+fm.getAscent())/2 - 5;
+                int x = (getWidth() - fm.stringWidth(getText())) / 2;
+                int y = (getHeight() + fm.getAscent()) / 2 - 5;
 
                 g2.drawString(getText(), x, y);
 
@@ -379,18 +227,31 @@ public class playpage extends JFrame {
         btn.setFocusPainted(false);
         btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
-        // Hover effect
-        btn.addMouseListener(new MouseAdapter() {
-            public void mouseEntered(MouseEvent e) { btn.setBackground(color.brighter()); }
-            public void mouseExited(MouseEvent e) { btn.setBackground(color); }
+        btn.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseEntered(java.awt.event.MouseEvent e) { btn.setBackground(color.brighter()); }
+            public void mouseExited(java.awt.event.MouseEvent e) { btn.setBackground(color); }
         });
 
         return btn;
     }
 
-    ////////////////////////// MAIN /////////////////////////////////
+    ////////////////// BORDER ////////////////// for padding inside #Userfield
+
+    class RoundedBorder extends AbstractBorder {
+
+        int r;
+
+        RoundedBorder(int r) { this.r = r; }
+
+        @Override
+        public Insets getBorderInsets(Component c) {
+            return new Insets(5, 20, 5, 20);
+        }
+    }
+
+    ////////////////// MAIN //////////////////
 
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> new playpage().setVisible(true));
+        SwingUtilities.invokeLater(() -> new loginpage2().setVisible(true));
     }
 }
