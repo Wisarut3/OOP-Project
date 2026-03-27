@@ -30,8 +30,9 @@ public class playpage extends JFrame {
         target1Label = new JLabel("100");
         target2Label = new JLabel("200");
         moneyLabel = new JLabel("$5,000");
-        scoreLabel = new JLabel("0", JLabel.CENTER); // ผมรวมเลข ลิ้ง engine
-        scoreLabel.setText("XX"); // ผมรวมเลข ลิ้ง engine
+        squadStatusLabel = new JLabel("READY");
+        scoreLabel = new JLabel("0", JLabel.CENTER);
+        scoreLabel.setText("XX"); // engine
 
         // main BACKGROUND 
         BackgroundPanel mainBg = new BackgroundPanel();
