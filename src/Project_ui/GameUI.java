@@ -1,4 +1,4 @@
-
+package Project_ui;
 
 import Main.Bot;
 import Main.Card;
@@ -43,7 +43,7 @@ public class GameUI extends JFrame {
     private JButton buyNegBtn, buyZeroBtn, useNegBtn, useZeroBtn, playBtn;
     private JButton[] handCards = new JButton[5];
 
-    public GameUI() {
+    public GameUI(JFrame owner) {
         // Setup Fullscreen Window 
         setUndecorated(true);
         setExtendedState(JFrame.MAXIMIZED_BOTH);
@@ -109,7 +109,10 @@ public class GameUI extends JFrame {
         JButton closeBtn = new JButton("✕");
         closeBtn.setBackground(new Color(255, 80, 80));
         closeBtn.setForeground(Color.WHITE);
-        closeBtn.addActionListener(e -> System.exit(0));
+        closeBtn.addActionListener(e -> {
+            owner.setVisible(true);
+            this.dispose();
+        });
         bg.add(closeBtn);
 
         // Handle Responsive Layout 
@@ -371,9 +374,5 @@ public class GameUI extends JFrame {
             g.setColor(new Color(0, 0, 0, 180));
             g.fillRect(0, 0, getWidth(), getHeight());
         }
-    }
-
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> new GameUI().setVisible(true));
     }
 }

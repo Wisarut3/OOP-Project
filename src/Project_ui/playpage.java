@@ -6,6 +6,7 @@ import java.awt.geom.RoundRectangle2D;
 
 public class playpage extends JFrame {
 
+    private JFrame owner;
     private int selectedValue = -1;
     public int getSelectedCardValue() { return selectedValue; }
 
@@ -21,8 +22,8 @@ public class playpage extends JFrame {
     private final Color COLOR_RED = new Color(180, 0, 0);
 
 
-    public playpage() {
-
+    public playpage(JFrame owner) {
+        this.owner = owner;
         setUndecorated(true);
         setExtendedState(JFrame.MAXIMIZED_BOTH);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
@@ -260,7 +261,11 @@ public class playpage extends JFrame {
         p.setOpaque(false);
 
         JButton backBtn = createStyledButton("←", new Color(80, 80, 80));
-        backBtn.addActionListener(e -> System.out.println("BACK pressed"));
+        backBtn.addActionListener(e -> {
+            System.out.println("BACK pressed");
+            owner.setVisible(true);
+            this.dispose();
+        });
 
         JButton close = new JButton("✕");
         close.setForeground(Color.WHITE);
@@ -391,8 +396,8 @@ public class playpage extends JFrame {
     }
 
     ////////////////////////// MAIN /////////////////////////////////
-
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> new playpage().setVisible(true));
-    }
+//
+//    public static void main(String[] args) {
+//        SwingUtilities.invokeLater(() -> new playpage().setVisible(true));
+//    }
 }
