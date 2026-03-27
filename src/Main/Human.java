@@ -59,6 +59,14 @@ public class Human extends Player {
         waitingInput = false;
     }
     
+    public int getMoney(){
+        return money;
+    }
+    
+    public ArrayList<EffectCard> getEfcList(){
+        return efcList;
+    }
+    
     public ArrayList<Card> getCardList(){
         return cardList;
     }

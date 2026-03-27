@@ -20,7 +20,7 @@ public class OfflineMode extends JFrame {
     public JLabel target1Label, target2Label;
     public JLabel moneyLabel, squadStatusLabel, scoreLabel;
     public JPanel cardContainer;
-
+    
     // CARD STATE
     private CardUI currentSelectedCard = null;
     
@@ -39,9 +39,9 @@ public class OfflineMode extends JFrame {
         setDefaultCloseOperation(EXIT_ON_CLOSE);
 
         // link engine ****
-        target1Label = new JLabel("100");
-        target2Label = new JLabel("200");
-        moneyLabel = new JLabel("$5,000");
+        target1Label = new JLabel(String.valueOf(player.getTarget()[0]));
+        target2Label = new JLabel(String.valueOf(player.getTarget()[1]));
+        moneyLabel = new JLabel(String.valueOf(player.getMoney()));
         squadStatusLabel = new JLabel("READY");
         scoreLabel = new JLabel("0", JLabel.CENTER);
         scoreLabel.setText("XX"); // engine
@@ -102,8 +102,13 @@ public class OfflineMode extends JFrame {
                     Card c = it.next();
                     if (c.getValue() == selectedValue){
                         it.remove();
+                        if(player.getCardList().size() < 4 & engine.getTotal() == 0){
+                            scoreLabel.setText(String.valueOf(engine.getTotal()));
+                        }
+                        else{
+                            scoreLabel.setText(String.valueOf(engine.getTotal() + c.getValue()));
+                        }
                         player.setUse(c);
-                        scoreLabel.setText(String.valueOf(engine.getTotal() + c.getValue()));
                         break;
                     }
                 }
@@ -120,23 +125,36 @@ public class OfflineMode extends JFrame {
 
         // Assets panel
         RoundedPanel assetP = new RoundedPanel("ASSETS");
-        addInfoRow(assetP, "TOTAL WEALTH :", moneyLabel);
+        addInfoRow(assetP, "TOTAL MONEY :", moneyLabel);
 
-        JButton shopBtn = createStyledButton("SHOP", COLOR_ACCENT);
-        shopBtn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 60));
+        JButton negBtn = createStyledButton("BUY NEGATIVE", COLOR_ACCENT);
+        JButton zeroBtn = createStyledButton("BUY ZERO", COLOR_ACCENT);
+        negBtn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 60));
 
-        shopBtn.addActionListener(e ->
-                System.out.println("SHOP pressed")
-        );
+        negBtn.addActionListener(e -> {
+            if(player.buyItem("Negative")){
+                updateUI();
+            }
+        });
 
+        zeroBtn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 60));
+
+        zeroBtn.addActionListener(e -> {
+            if(player.buyItem("Zero")){
+                updateUI();   
+            }
+        });
+        
         assetP.addContentRow(Box.createVerticalStrut(15));
-        assetP.addContentRow(shopBtn);
+        assetP.addContentRow(zeroBtn);
+        assetP.addContentRow(negBtn);
 
         rightCol.add(assetP);
 
         // Items panel
         RoundedPanel itemP = new RoundedPanel("TACTICAL ITEMS");
-        addInfoRow(itemP, "ITEM SLOTS :", new JLabel("EMPTY"));
+        JLabel efcList = new JLabel("Empty");
+        addInfoRow(itemP, "ITEM SLOTS :", efcList);
         rightCol.add(itemP);
 
         grid.add(leftCol);
@@ -172,6 +190,8 @@ public class OfflineMode extends JFrame {
         
         cardContainer.revalidate();
         cardContainer.repaint();
+        
+        moneyLabel.setText(String.valueOf(player.getMoney()));
         
     }
 
