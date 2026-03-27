@@ -1,3 +1,4 @@
+package Database;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
@@ -54,6 +55,7 @@ public class RegisterForm extends JFrame {
             new LoginForm().setVisible(true);
             this.dispose();
         } catch (Exception ex) {
+            ex.printStackTrace();
             JOptionPane.showMessageDialog(this, "User already exists!");
         }
     }
