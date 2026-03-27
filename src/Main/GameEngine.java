@@ -5,16 +5,16 @@ import java.util.*;
 public class GameEngine implements Runnable {
 
     private final ArrayList<Player> playerList;
-    private int cumulativeTotal;
+    private int cumulativeTotal = 0;
     private boolean zero;
     private GameServer server; // null = offline mode
 
     // offline mode
-    public GameEngine() {
+    public GameEngine(Human player) {
         playerList = new ArrayList<>();
         playerList.add(new Bot());
         playerList.add(new Bot());
-        playerList.add(new Human());
+        playerList.add(player);
         init();
     }
 
@@ -78,7 +78,7 @@ public class GameEngine implements Runnable {
     }
 
     public void calculateRound(int roundNum) {
-        cumulativeTotal = 0;
+//        cumulativeTotal = 0;
         StringBuilder log = new StringBuilder("--- Round " + roundNum + " ---\n");
         for (Player p : playerList) {
             Card c = p.selectMove();
@@ -115,8 +115,12 @@ public class GameEngine implements Runnable {
             server.broadcastState(GameMessage.gameOver(names, finalScores));
         }
     }
+    
+    public int getTotal(){
+        return cumulativeTotal;
+    }
 
     public static void main(String[] args) {
-        new Thread(new GameEngine()).start();
+        new Thread(new GameEngine(new Human())).start();
     }
 }

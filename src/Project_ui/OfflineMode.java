@@ -1,21 +1,25 @@
 package Project_ui;
-import javax.swing.*;
+
+import Main.*;
+import java.util.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.geom.RoundRectangle2D;
-import Main.*;
+import javax.swing.*;
+import static javax.swing.WindowConstants.EXIT_ON_CLOSE;
 
-public class playpage extends JFrame {
+public class OfflineMode extends JFrame {
 
-    private JFrame owner;
+//    private final JFrame owner;
     private int selectedValue = -1;
     public int getSelectedCardValue() { return selectedValue; }
-    private GameEngine engine;
-    private Human player;
+    private final GameEngine engine;
+    private final Human player;
 
     // UI
     public JLabel target1Label, target2Label;
     public JLabel moneyLabel, squadStatusLabel, scoreLabel;
+    public JPanel cardContainer;
 
     // CARD STATE
     private CardUI currentSelectedCard = null;
@@ -25,9 +29,11 @@ public class playpage extends JFrame {
     private final Color COLOR_RED = new Color(180, 0, 0);
 
 
-    public playpage(JFrame owner) {
-        engine = new GameEngine();
-        this.owner = owner;
+    public OfflineMode() {
+        player = new Human();
+        engine = new GameEngine(player);
+        new Thread(engine).start();
+//        this.owner = owner;
         setUndecorated(true);
         setExtendedState(JFrame.MAXIMIZED_BOTH);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
@@ -48,7 +54,8 @@ public class playpage extends JFrame {
 
         mainBg.add(createTopBar(), BorderLayout.NORTH);
         mainBg.add(createMainLayout(), BorderLayout.CENTER);
-        mainBg.add(createBottomBar(), BorderLayout.SOUTH);
+        cardContainer = createBottomBar();
+        mainBg.add(cardContainer, BorderLayout.SOUTH);
     }
 
     ////////////////////////// 3-column layout /////////////////////////////
@@ -90,6 +97,18 @@ public class playpage extends JFrame {
                 System.out.println("No card selected");
             } else {
                 System.out.println("Using card: " + selectedValue);
+                Iterator<Card> it = player.getCardList().iterator();
+                while (it.hasNext()){
+                    Card c = it.next();
+                    if (c.getValue() == selectedValue){
+                        it.remove();
+                        player.setUse(c);
+                        scoreLabel.setText(String.valueOf(engine.getTotal() + c.getValue()));
+                        break;
+                    }
+                }
+                updateUI();
+                selectedValue = -1;
             }
         });
 
@@ -135,11 +154,25 @@ public class playpage extends JFrame {
         cardContainer.setOpaque(false);
         cardContainer.setPreferredSize(new Dimension(0, 300));
 
-        for (int i = 1; i <= 5; i++) {
-            cardContainer.add(new CardUI(i));
+        for(int i = 0; i < player.getCardList().size(); i++){
+            int cardValue = player.getCardList().get(i).getValue();
+            cardContainer.add(new CardUI(cardValue));
         }
-
+        
         return cardContainer;
+    }
+    
+    public void updateUI(){
+        cardContainer.removeAll();
+        
+        for(int i = 0; i < player.getCardList().size(); i++){
+            int cardValue = player.getCardList().get(i).getValue();
+            cardContainer.add(new CardUI(cardValue));
+        }
+        
+        cardContainer.revalidate();
+        cardContainer.repaint();
+        
     }
 
     ////////////////////////// CARD CLASS /////////////////////////////
@@ -151,7 +184,7 @@ public class playpage extends JFrame {
 
         public CardUI(int val) {
             this.value = val;
-
+            
             //card background
             cardBg = new ImageIcon("card_bg.png").getImage();
 
@@ -266,7 +299,7 @@ public class playpage extends JFrame {
         JButton backBtn = createStyledButton("←", new Color(80, 80, 80));
         backBtn.addActionListener(e -> {
             System.out.println("BACK pressed");
-            owner.setVisible(true);
+//            owner.setVisible(true);
             this.dispose();
         });
 
@@ -396,6 +429,10 @@ public class playpage extends JFrame {
         });
 
         return btn;
+    }
+    
+    public static void main(String[] args) {
+        new OfflineMode().setVisible(true);
     }
 
 }
