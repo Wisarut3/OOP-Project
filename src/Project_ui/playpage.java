@@ -3,12 +3,14 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.geom.RoundRectangle2D;
+import Main.GameEngine;
 
 public class playpage extends JFrame {
 
     private JFrame owner;
     private int selectedValue = -1;
     public int getSelectedCardValue() { return selectedValue; }
+    private GameEngine engine;
 
     // UI
     public JLabel target1Label, target2Label;
@@ -23,6 +25,7 @@ public class playpage extends JFrame {
 
 
     public playpage(JFrame owner) {
+        engine = new GameEngine();
         this.owner = owner;
         setUndecorated(true);
         setExtendedState(JFrame.MAXIMIZED_BOTH);
