@@ -78,6 +78,10 @@ public class RoomManager {
             return code;
         }
 
+        public String getHostUsername() {
+            return usernames.isEmpty() ? "" : usernames.get(0);
+        }
+
         public int getMaxHumans() {
             return maxHumans;
         }

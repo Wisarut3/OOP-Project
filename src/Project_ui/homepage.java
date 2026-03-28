@@ -5,7 +5,7 @@ import java.awt.*;
 
 public class homepage extends JFrame {
 
-    public homepage(String user, String gamewin) {
+    public homepage(String username, String gamewin) {
         setUndecorated(true);
         setExtendedState(JFrame.MAXIMIZED_BOTH);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
@@ -14,7 +14,7 @@ public class homepage extends JFrame {
         setContentPane(bg);
         bg.setLayout(null);
 
-        InfoLabel userLabel = new InfoLabel("User: " + user);
+        InfoLabel userLabel = new InfoLabel("User: " + username);
         InfoLabel winLabel = new InfoLabel("Games won: " + gamewin);
         bg.add(userLabel);
         bg.add(winLabel);
@@ -31,7 +31,7 @@ public class homepage extends JFrame {
         close.addActionListener(e -> System.exit(0));
         bg.add(close);
 
-        JPanel panel = buildPanel(user);
+        JPanel panel = buildPanel(username);
         int pw = 400, ph = 320;
         bg.add(panel);
 
@@ -54,7 +54,7 @@ public class homepage extends JFrame {
         });
     }
 
-    private JPanel buildPanel(String user) {
+    private JPanel buildPanel(String username) {
         JPanel p = new JPanel() {
             @Override
             protected void paintComponent(Graphics g) {
@@ -67,7 +67,7 @@ public class homepage extends JFrame {
         btnSolo.setBounds(50, 80, 300, 55);
         btnSolo.addActionListener(e -> {
             // Solo mode: GameUI ไม่มี client → null
-            GameUI ui = new GameUI(this, null);
+            GameUI ui = new GameUI(this, null, username);
             ui.setVisible(true);
             setVisible(false);
         });
@@ -76,7 +76,7 @@ public class homepage extends JFrame {
         JButton btnOnline = btn("Play with Friends", new Color(90, 0, 0));
         btnOnline.setBounds(50, 160, 300, 55);
         btnOnline.addActionListener(e -> {
-            new roomcreate(this, user).setVisible(true);
+            new roomcreate(this, username).setVisible(true);
             setVisible(false);
         });
         p.add(btnOnline);

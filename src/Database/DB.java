@@ -1,8 +1,10 @@
 package Database;
+
 import java.sql.*;
 import javax.swing.*;
 
 public class DB {
+
     public static Connection getConnection() {
         try {
             String url = "jdbc:mysql://root:WbDIAdoHGvuSDMQYzsdgdGLKQNiSyKll@gondola.proxy.rlwy.net:34173/railway";
@@ -15,7 +17,7 @@ public class DB {
             return null;
         }
     }
-    
+
     public static int checkLogin(String user, String pass) {
         try (Connection conn = DB.getConnection()) {
             String sql = "SELECT * FROM users WHERE username=? AND password=?";
@@ -24,7 +26,7 @@ public class DB {
             pstmt.setString(2, pass);
 
             ResultSet rs = pstmt.executeQuery();
-            
+
             if (rs.next()) {
                 String currentUsername = rs.getString("username");
                 JOptionPane.showMessageDialog(null, "Login Success! Welcome " + currentUsername);
@@ -39,7 +41,7 @@ public class DB {
             return -1;
         }
     }
-    
+
     public static void saveToDatabase(String user, String pass) {
         if (user.isEmpty() || pass.isEmpty()) {
             JOptionPane.showMessageDialog(null, "Please fill all fields!");
@@ -57,6 +59,21 @@ public class DB {
         } catch (SQLException ex) {
             //ex.printStackTrace();
             JOptionPane.showMessageDialog(null, "User already exists!");
+        }
+    }
+
+    public static void addWin(String username) {
+        // โค้ดนี้เป็นแค่ตัวอย่าง คุณต้องปรับให้เข้ากับชื่อ Table ของคุณ
+        String sql = "UPDATE users SET wins = wins + 1 WHERE username = ?";
+        try (Connection conn = getConnection(); // ใช้เมธอดเชื่อมต่อ DB ของคุณ
+                 PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, username);
+            pstmt.executeUpdate();
+            System.out.println("Updated win for: " + username);
+
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 }

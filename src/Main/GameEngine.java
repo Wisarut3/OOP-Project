@@ -15,13 +15,13 @@ public class GameEngine implements Runnable {
         this.server = server;
         init();
     }
-
-    // ── Offline terminal (เดิม) ───────────────────────────────────────────
-    public GameEngine() {
+    
+    public GameEngine(Player player, GameServer server){
         playerList = new ArrayList<>();
+        playerList.add(player);
         playerList.add(new Bot());
         playerList.add(new Bot());
-        playerList.add(new Human());
+        this.server = server;
         init();
     }
 
@@ -111,7 +111,7 @@ public class GameEngine implements Runnable {
         }
     }
 
-    public static void main(String[] args) {
-        new Thread(new GameEngine()).start();
-    }
+//    public static void main(String[] args) {
+//        new Thread(new GameEngine()).start();
+//    }
 }

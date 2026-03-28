@@ -77,6 +77,11 @@ public class GameServer {
 
         RoomManager.Room room = roomManager.getRoom(code);
 
+        // ป้องกันคนสร้างห้องเข้าซ้ำ
+        if (room != null && room.getHostUsername().equals(username)) {
+            handler.send(GameMessage.roomJoinFail("You are the host of this room"));
+            return;
+        }
         if (room == null || room.isStarted()) {
             handler.send(GameMessage.roomJoinFail("Room not found"));
             return;
