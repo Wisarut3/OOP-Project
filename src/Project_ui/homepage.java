@@ -2,10 +2,12 @@ package Project_ui;
 
 import javax.swing.*;
 import java.awt.*;
+import Database.DB;
 
 public class homepage extends JFrame {
-
+    private String gamewin;
     public homepage(String username, String gamewin) {
+        this.gamewin = String.valueOf(gamewin);
         setUndecorated(true);
         setExtendedState(JFrame.MAXIMIZED_BOTH);
         setDefaultCloseOperation(EXIT_ON_CLOSE);

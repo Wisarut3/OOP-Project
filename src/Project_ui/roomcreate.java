@@ -221,7 +221,7 @@ public class roomcreate extends JFrame {
                     GameUI gameUI = new GameUI(roomcreate.this, client, username);
                     client.setGameUI(gameUI); // ผูก UI เข้ากับ Client ทันที
                     gameUI.setVisible(true);
-                    roomcreate.this.setVisible(false);
+                    this.setVisible(false);
                 });
             } catch (Exception ex) {
                 ex.printStackTrace();
@@ -268,7 +268,7 @@ public class roomcreate extends JFrame {
                     GameUI gameUI = new GameUI(roomcreate.this, client, username);
                     client.setGameUI(gameUI);
                     gameUI.setVisible(true);
-                    roomcreate.this.setVisible(false);
+                    this.setVisible(false);
                 });
             } catch (Exception ex) {
                 ex.printStackTrace();

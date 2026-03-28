@@ -76,4 +76,19 @@ public class DB {
             e.printStackTrace();
         }
     }
+
+    public static int getWin(String username) {
+        String sql = "SELECT * FROM users WHERE username = ?";
+        try (Connection conn = getConnection()) {
+            PreparedStatement pstmt = conn.prepareStatement(sql);
+            pstmt.setString(1, username);
+            ResultSet rs = pstmt.executeQuery();
+            if(rs.next()){
+                return rs.getInt("win_rate");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return -1;
+    }
 }

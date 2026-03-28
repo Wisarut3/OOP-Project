@@ -272,20 +272,34 @@ public class GameUI extends JFrame {
     }
 
     public void onGameOver(String[] names, int[] scores) {
-        SwingUtilities.invokeLater(() -> {
+        new Thread(() -> {
             int max = Arrays.stream(scores).max().getAsInt();
             int index = isOnline ? client.getPlayerIndex() : 0;
-            if(scores[index] == max){
+            boolean isWinner = (scores[index] == max);
+
+            if (isOnline && isWinner) {
                 DB.addWin(this.username);
             }
-            StringBuilder sb = new StringBuilder("===== GAME OVER =====\n\n");
-            for (int i = 0; i < names.length; i++) {
-                sb.append(names[i]).append(": ").append(scores[i]).append(" pts")
-                        .append(scores[i] == max ? " 🏆" : "").append("\n");
-            }
-            JOptionPane.showMessageDialog(this, sb.toString(), "จบเกม", JOptionPane.INFORMATION_MESSAGE);
-            System.exit(0);
-        });
+
+            int latestWins = DB.getWin(this.username);
+            
+            final String finalWinsString = latestWins >= 0 ? String.valueOf(latestWins) : "?";
+
+            SwingUtilities.invokeLater(() -> {
+                StringBuilder sb = new StringBuilder("===== GAME OVER =====\n\n");
+                for (int i = 0; i < names.length; i++) {
+                    sb.append(names[i]).append(": ").append(scores[i]).append(" pts")
+                            .append(scores[i] == max ? " 🏆" : "").append("\n");
+                }
+                
+                JOptionPane.showMessageDialog(GameUI.this, sb.toString(), "จบเกม", JOptionPane.INFORMATION_MESSAGE);
+                
+                new homepage(GameUI.this.username, finalWinsString).setVisible(true);
+                
+                GameUI.this.dispose();
+            });
+
+        }).start();
     }
 
     private void buildOnlineHand() {
