@@ -116,15 +116,15 @@ public class roomcreate extends JFrame {
         p.add(sep);
 
         // ── CREATE section ────────────────────────────────────────────────
-        JLabel lCreate = lbl("Create Room (Create)", big);
+        JLabel lCreate = lbl("Create Room", big);
         lCreate.setBounds(40, 115, 280, 32);
         p.add(lCreate);
 
-        JLabel lSize = lbl("Number of Players (1-3):", bold);
+        JLabel lSize = lbl("Number of Players (2-3):", bold);
         lSize.setBounds(40, 155, 200, 26);
         p.add(lSize);
         tfSize = field();
-        tfSize.setText("3");
+        tfSize.setText("2");
         tfSize.setBounds(250, 150, 80, 36);
         p.add(tfSize);
 
@@ -183,7 +183,10 @@ public class roomcreate extends JFrame {
             size = Integer.parseInt(tfSize.getText().trim());
         } catch (Exception ignored) {
         }
-        size = Math.max(1, Math.min(3, size));
+        size = Math.max(2, Math.min(3, size));
+        if (size < 2) {
+            size = 2;
+        }
 
         btnCreate.setEnabled(false);
         lblStatus.setText("Creating Room...");
@@ -211,13 +214,19 @@ public class roomcreate extends JFrame {
         client.setOnRoomStatus(names -> SwingUtilities.invokeLater(()
                 -> lblStatus.setText("Player in room: " + String.join(", ", names))));
 
-        client.setOnGameStart(() -> SwingUtilities.invokeLater(() -> {
-            // เปิดหน้าเกม
-            GameUI gameUI = new GameUI(this, client);
-            client.setGameUI(gameUI);
-            gameUI.setVisible(true);
-            setVisible(false);
-        }));
+        client.setOnGameStart(() -> {
+            try {
+                // เปลี่ยนจาก invokeLater เป็น invokeAndWait เพื่อหยุดรอให้หน้าจอสร้างเสร็จก่อน
+                SwingUtilities.invokeAndWait(() -> {
+                    GameUI gameUI = new GameUI(roomcreate.this, client, username);
+                    client.setGameUI(gameUI); // ผูก UI เข้ากับ Client ทันที
+                    gameUI.setVisible(true);
+                    this.setVisible(false);
+                });
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        });
 
         client.setOnJoinFail(reason -> SwingUtilities.invokeLater(() -> {
             lblStatus.setText("Error: " + reason);
@@ -233,7 +242,7 @@ public class roomcreate extends JFrame {
         String code = tfCode.getText().trim().toUpperCase();
 
         if (ip.isEmpty()) {
-            lblStatus.setText("Please IP");
+            lblStatus.setText("Please enter Server IP");
             return;
         }
         if (code.isEmpty()) {
@@ -252,12 +261,19 @@ public class roomcreate extends JFrame {
         client.setOnRoomStatus(names -> SwingUtilities.invokeLater(()
                 -> lblStatus.setText("Player in room: " + String.join(", ", names))));
 
-        client.setOnGameStart(() -> SwingUtilities.invokeLater(() -> {
-            GameUI gameUI = new GameUI(this, client);
-            client.setGameUI(gameUI);
-            gameUI.setVisible(true);
-            setVisible(false);
-        }));
+        client.setOnGameStart(() -> {
+            try {
+                // เปลี่ยนเป็น invokeAndWait ตรงนี้ด้วยครับ
+                SwingUtilities.invokeAndWait(() -> {
+                    GameUI gameUI = new GameUI(roomcreate.this, client, username);
+                    client.setGameUI(gameUI);
+                    gameUI.setVisible(true);
+                    this.setVisible(false);
+                });
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        });
 
         client.setOnJoinFail(reason -> SwingUtilities.invokeLater(() -> {
             lblStatus.setText("Failed to join room: " + reason);
