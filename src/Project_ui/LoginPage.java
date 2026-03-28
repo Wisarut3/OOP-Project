@@ -5,9 +5,9 @@ import javax.swing.border.AbstractBorder;
 import java.awt.*;
 import java.awt.geom.RoundRectangle2D;
 
-public class loginpage2 extends JFrame {
+public class LoginPage extends JFrame {
 
-    public loginpage2() {
+    public LoginPage() {
 
         // fullscreen
         setUndecorated(true);
@@ -165,7 +165,7 @@ public class loginpage2 extends JFrame {
             new Thread(() -> {
                 int wins = DB.checkLogin(user, pass);
                 if(wins > -1){
-                    new homepage(user, String.valueOf(wins)).setVisible(true);
+                    new HomePage(user, String.valueOf(wins)).setVisible(true);
                     setVisible(false);
                 }
             }).start();
@@ -271,6 +271,6 @@ public class loginpage2 extends JFrame {
     ////////////////// MAIN //////////////////
 
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> new loginpage2().setVisible(true));
+        SwingUtilities.invokeLater(() -> new LoginPage().setVisible(true));
     }
 }

@@ -5,7 +5,7 @@ import java.awt.*;
 import java.awt.event.*;
 import java.awt.geom.RoundRectangle2D;
 
-public class playpage extends JFrame {
+public class PlayPage extends JFrame {
 
     private JFrame owner;
     private int selectedValue = -1;
@@ -25,7 +25,7 @@ public class playpage extends JFrame {
     private final Color COLOR_ACCENT = new Color(120, 0, 0);
     private final Color COLOR_RED = new Color(180, 0, 0);
 
-    public playpage(JFrame owner) {
+    public PlayPage(JFrame owner) {
         this.owner = owner;
         setUndecorated(true);
         setExtendedState(JFrame.MAXIMIZED_BOTH);

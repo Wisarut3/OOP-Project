@@ -17,7 +17,7 @@ import java.awt.*;
  * Join room: 1. กรอก Server IP ของคน host 2. กรอก Room Code 4 ตัว 3. กด "Join
  * Room" → เข้าร่วมห้องทันที
  */
-public class roomcreate extends JFrame {
+public class RoomCreate extends JFrame {
 
     private final JFrame owner;
     private final String username;
@@ -27,7 +27,7 @@ public class roomcreate extends JFrame {
     private JLabel lblRoomCode, lblStatus;
     private JButton btnCreate, btnJoin;
 
-    public roomcreate(JFrame owner, String username) {
+    public RoomCreate(JFrame owner, String username) {
         this.owner = owner;
         this.username = username;
 
@@ -218,7 +218,7 @@ public class roomcreate extends JFrame {
             try {
                 // เปลี่ยนจาก invokeLater เป็น invokeAndWait เพื่อหยุดรอให้หน้าจอสร้างเสร็จก่อน
                 SwingUtilities.invokeAndWait(() -> {
-                    GameUI gameUI = new GameUI(roomcreate.this, client, username);
+                    GameUI gameUI = new GameUI(RoomCreate.this, client, username);
                     client.setGameUI(gameUI); // ผูก UI เข้ากับ Client ทันที
                     gameUI.setVisible(true);
                     this.setVisible(false);
@@ -265,7 +265,7 @@ public class roomcreate extends JFrame {
             try {
                 // เปลี่ยนเป็น invokeAndWait ตรงนี้ด้วยครับ
                 SwingUtilities.invokeAndWait(() -> {
-                    GameUI gameUI = new GameUI(roomcreate.this, client, username);
+                    GameUI gameUI = new GameUI(RoomCreate.this, client, username);
                     client.setGameUI(gameUI);
                     gameUI.setVisible(true);
                     this.setVisible(false);

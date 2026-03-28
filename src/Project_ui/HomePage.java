@@ -4,9 +4,9 @@ import javax.swing.*;
 import java.awt.*;
 import Database.DB;
 
-public class homepage extends JFrame {
+public class HomePage extends JFrame {
     private String gamewin;
-    public homepage(String username, String gamewin) {
+    public HomePage(String username, String gamewin) {
         this.gamewin = String.valueOf(gamewin);
         setUndecorated(true);
         setExtendedState(JFrame.MAXIMIZED_BOTH);
@@ -78,7 +78,7 @@ public class homepage extends JFrame {
         JButton btnOnline = btn("Play with Friends", new Color(90, 0, 0));
         btnOnline.setBounds(50, 160, 300, 55);
         btnOnline.addActionListener(e -> {
-            new roomcreate(this, username).setVisible(true);
+            new RoomCreate(this, username).setVisible(true);
             setVisible(false);
         });
         p.add(btnOnline);

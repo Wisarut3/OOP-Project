@@ -294,7 +294,7 @@ public class GameUI extends JFrame {
                 
                 JOptionPane.showMessageDialog(GameUI.this, sb.toString(), "จบเกม", JOptionPane.INFORMATION_MESSAGE);
                 
-                new homepage(GameUI.this.username, finalWinsString).setVisible(true);
+                new HomePage(GameUI.this.username, finalWinsString).setVisible(true);
                 
                 GameUI.this.dispose();
             });
