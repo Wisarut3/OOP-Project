@@ -2,13 +2,13 @@ package Main;
 
 import Project_ui.GameUI;
 
-public class LocalGUIHuman extends Player {
+public class LocalHuman extends Player {
 
     private final GameUI ui;
     private volatile Card selectedCard;
     private volatile boolean waitingForInput;
 
-    public LocalGUIHuman(GameUI ui) {
+    public LocalHuman(GameUI ui) {
         this.ui = ui;
         for (int i = 1; i <= 5; i++) {
             cardList.add(new Card(i));

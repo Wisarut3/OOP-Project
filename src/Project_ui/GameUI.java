@@ -11,7 +11,7 @@ public class GameUI extends JFrame {
 
     private final boolean isOnline;
     private GameClient client;
-    private LocalGUIHuman localPlayer; // ตัวแทนเราในโหมด Solo
+    private LocalHuman localPlayer; // ตัวแทนเราในโหมด Solo
     private int currentTableTotal = 0;
     private String username;
 
@@ -160,7 +160,7 @@ public class GameUI extends JFrame {
     // ─────────────────────────────────────────────────────────────────────
     
     private void initSoloLogic() {
-        localPlayer = new LocalGUIHuman(this);
+        localPlayer = new LocalHuman(this);
 
         // สร้าง Server จำลองมารับผลลัพธ์จาก GameEngine แล้วยิงเข้าหน้าจอ
         GameServer dummyServer = new GameServer() {
@@ -276,7 +276,7 @@ public class GameUI extends JFrame {
             int max = Arrays.stream(scores).max().getAsInt();
             int index = isOnline ? client.getPlayerIndex() : 0;
             if(scores[index] == max){
-                
+                DB.addWin(this.username);
             }
             StringBuilder sb = new StringBuilder("===== GAME OVER =====\n\n");
             for (int i = 0; i < names.length; i++) {

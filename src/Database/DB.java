@@ -64,7 +64,7 @@ public class DB {
 
     public static void addWin(String username) {
         // โค้ดนี้เป็นแค่ตัวอย่าง คุณต้องปรับให้เข้ากับชื่อ Table ของคุณ
-        String sql = "UPDATE users SET wins = wins + 1 WHERE username = ?";
+        String sql = "UPDATE users SET win_rate = win_rate + 1 WHERE username = ?";
         try (Connection conn = getConnection(); // ใช้เมธอดเชื่อมต่อ DB ของคุณ
                  PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
