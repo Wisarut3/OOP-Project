@@ -11,7 +11,7 @@ public class GameUI extends JFrame {
 
     private final boolean isOnline;
     private GameClient client;
-    private LocalHuman localPlayer; // ตัวแทนเราในโหมด Solo
+    private LocalHuman localPlayer; // For solo mode
     private int currentTableTotal = 0;
     private String username;
 
@@ -98,7 +98,7 @@ public class GameUI extends JFrame {
         playBtn.addActionListener(e -> processPlayCard());
         bg.add(playBtn);
 
-        handPanel = new JPanel(null); // ใช้ Null Layout จัดพิกัดเอง 100%
+        handPanel = new JPanel(null);
         handPanel.setOpaque(false);
         bg.add(handPanel);
 
@@ -156,13 +156,13 @@ public class GameUI extends JFrame {
     }
 
     // ─────────────────────────────────────────────────────────────────────
-    // CORE SYSTEM (รวม Solo และ Online ไว้ด้วยกัน)
+    // CORE SYSTEM (Solo & Online)
     // ─────────────────────────────────────────────────────────────────────
     
     private void initSoloLogic() {
         localPlayer = new LocalHuman(this);
 
-        // สร้าง Server จำลองมารับผลลัพธ์จาก GameEngine แล้วยิงเข้าหน้าจอ
+        //Set dummy server to let GameEngine broadcast to GUI
         GameServer dummyServer = new GameServer() {
             @Override
             public void broadcastState(GameMessage msg) {
@@ -174,7 +174,6 @@ public class GameUI extends JFrame {
             }
         };
 
-        // สตาร์ท GameEngine 100% เต็มสูบ!
         new Thread(new GameEngine(localPlayer, dummyServer)).start();
     }
 
@@ -186,7 +185,7 @@ public class GameUI extends JFrame {
     private void toggleEffect(String effect, JButton clicked, JButton other) {
         List<String> inv = Arrays.asList(onlineEffects);
         if (!inv.contains(effect) && !pendingBuy.equals(effect)) {
-            JOptionPane.showMessageDialog(this, "ไม่มี " + effect + " ใน inventory");
+            JOptionPane.showMessageDialog(this, "No " + effect + " in your inventory");
             return;
         }
         if (selectedUseEffect.equals(effect)) {
@@ -201,19 +200,18 @@ public class GameUI extends JFrame {
 
     private void processPlayCard() {
         if (selectedCardIdx < 0) {
-            JOptionPane.showMessageDialog(this, "กรุณาเลือกไพ่ก่อน");
+            JOptionPane.showMessageDialog(this, "Please choose your card");
             return;
         }
         if (!isMyTurn) return;
 
         isMyTurn = false;
         disableAllActions();
-        onlineStatusLabel.setText("ส่ง move แล้ว รอการประมวลผล...");
+        onlineStatusLabel.setText("Move sent!");
 
         if (isOnline) {
             client.sendMove(selectedCardIdx, pendingBuy, selectedUseEffect);
         } else {
-            // โหมด Solo โยนให้ Local Player จัดการ (Engine กำลังรอรับอยู่)
             localPlayer.submitMove(selectedCardIdx, pendingBuy, selectedUseEffect);
         }
 
@@ -226,6 +224,7 @@ public class GameUI extends JFrame {
     // CALLBACKS (สำหรับให้ Engine และ Client เรียกมาอัปเดตจอ)
     // ─────────────────────────────────────────────────────────────────────
 
+    //Get data from GameEngine after using a card
     public void onGameState(int[] targets, int money, int score, int[] hand, String[] effects) {
         SwingUtilities.invokeLater(() -> {
             onlineTargets = targets;
@@ -242,6 +241,7 @@ public class GameUI extends JFrame {
         });
     }
 
+    //Requesting next move from GameEngine
     public void onRequestMove(GameClient gc) {
         SwingUtilities.invokeLater(() -> {
             isMyTurn = true;
@@ -250,13 +250,14 @@ public class GameUI extends JFrame {
         });
     }
 
+    
     public void onRoundResult(int total, int[] scores, String log) {
         SwingUtilities.invokeLater(() -> {
             currentTableTotal = total;
             totalLabel.setText(String.valueOf(total));
             isMyTurn = false;
             disableAllActions();
-            onlineStatusLabel.setText("รอบจบ — Total: " + total);
+            onlineStatusLabel.setText("Result — Total: " + total);
 
             if (scores.length >= 3) {
                 bot1Label.setText("P2 | Score: " + scores[1]);
@@ -267,7 +268,7 @@ public class GameUI extends JFrame {
             for (int i = 0; i < scores.length; i++) {
                 sb.append("P").append(i + 1).append(": ").append(scores[i]).append("  ");
             }
-            JOptionPane.showMessageDialog(this, sb.toString(), "ผลรอบ", JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showMessageDialog(this, sb.toString(), "Result", JOptionPane.INFORMATION_MESSAGE);
         });
     }
 
@@ -292,7 +293,7 @@ public class GameUI extends JFrame {
                             .append(scores[i] == max ? " 🏆" : "").append("\n");
                 }
                 
-                JOptionPane.showMessageDialog(GameUI.this, sb.toString(), "จบเกม", JOptionPane.INFORMATION_MESSAGE);
+                JOptionPane.showMessageDialog(GameUI.this, sb.toString(), "Game Over", JOptionPane.INFORMATION_MESSAGE);
                 
                 new HomePage(GameUI.this.username, finalWinsString).setVisible(true);
                 
@@ -351,7 +352,7 @@ public class GameUI extends JFrame {
     }
 
     // ─────────────────────────────────────────────────────────────────────
-    // UI HELPERS (ละไว้เหมือนเดิม)
+    // UI HELPERS
     // ─────────────────────────────────────────────────────────────────────
     private JLabel label(String t, int s, Color c) {
         JLabel l = new JLabel(t);
