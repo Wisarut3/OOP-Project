@@ -16,6 +16,7 @@ public class GameEngine implements Runnable {
         init();
     }
     
+    // ── Offline mode ──────────────────────────────────────────────────────
     public GameEngine(Player player, GameServer server){
         playerList = new ArrayList<>();
         playerList.add(player);
@@ -24,7 +25,8 @@ public class GameEngine implements Runnable {
         this.server = server;
         init();
     }
-
+    
+    // Generate target for each player
     private void init() {
         zero = false;
         Random rand = new Random();
@@ -34,17 +36,20 @@ public class GameEngine implements Runnable {
         }
     }
 
+    // Set zero to cumulativeTotal and so that player can't add score to cumulative total until round ends
     public void setZero() {
         cumulativeTotal = 0;
         zero = true;
     }
 
+    // Add card value to cumulativeTotal
     public void addTotal(int s) {
         if (!zero) {
             cumulativeTotal += s;
         }
     }
 
+    // Use card effect if efc != null
     public void calculateEffect(Player p, Card c, EffectCard efc) {
         if (efc == null) {
             addTotal(c.getValue());
@@ -53,11 +58,13 @@ public class GameEngine implements Runnable {
         efc.applyEffect(this, p, c);
     }
 
+    //Add score to 1st and 2nd place after the round ends
     public void addScore(ArrayList<Player> sorted) {
         sorted.get(0).addScore(2);
         sorted.get(1).addScore(1);
     }
 
+    //Calculate the minimum difference to both targets for each player
     public void calculateScore() {
         for (Player p : playerList) {
             p.diff = Math.min(
@@ -69,6 +76,7 @@ public class GameEngine implements Runnable {
         addScore(sorted);
     }
 
+    //Run the round and return the result to each player's GUI
     public void calculateRound(int roundNum) {
         cumulativeTotal = 0;
         StringBuilder log = new StringBuilder("--- Round " + roundNum + " ---\n");
@@ -91,6 +99,7 @@ public class GameEngine implements Runnable {
             int[] scores = playerList.stream().mapToInt(Player::getScore).toArray();
             server.broadcastState(
                     GameMessage.roundResult(cumulativeTotal, scores, log.toString()));
+                    //Send result to each GameClient from GameServer.braodcastState -> room.broadcast(msg) -> ClientHandler.send() which connect to GameClient
         }
     }
 

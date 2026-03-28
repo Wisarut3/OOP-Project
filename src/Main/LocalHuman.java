@@ -27,15 +27,16 @@ public class LocalHuman extends Player {
     }
 
     @Override
+    //Runs when GameEngine calls LocalPlayer.selectMove()
     public Card selectMove() {
-        // 1. ส่งข้อมูลให้หน้าจอ GUI อัปเดตการ์ดและสถานะ
+        //Send player's card and effect to GUI
         int[] handValues = cardList.stream().mapToInt(Card::getValue).toArray();
         String[] inv = efcList.stream().map(e -> e.getClass().getSimpleName()).toArray(String[]::new);
         
         ui.onGameState(target, money, score, handValues, inv);
         ui.onRequestMove(null);
 
-        // 2. หยุด Thread นี้รอจนกว่าผู้เล่นจะกดปุ่ม PLAY CARD ในหน้าจอ
+        //Wait until player choose the card
         waitingForInput = true;
         while (waitingForInput) {
             try { Thread.sleep(50); } catch (InterruptedException ignored) {}
@@ -44,7 +45,7 @@ public class LocalHuman extends Player {
         return selectedCard;
     }
 
-    // เมธอดนี้จะถูกเรียกจาก GameUI เมื่อคุณกดปุ่ม PLAY CARD
+    //Runs after clicking play card button
     public void submitMove(int cardIdx, String buyEfc, String useEfc) {
         if (!buyEfc.equals("None")) buyItem(buyEfc);
         
