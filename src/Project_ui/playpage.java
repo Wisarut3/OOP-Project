@@ -1,4 +1,5 @@
 package Project_ui;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
@@ -8,7 +9,10 @@ public class playpage extends JFrame {
 
     private JFrame owner;
     private int selectedValue = -1;
-    public int getSelectedCardValue() { return selectedValue; }
+
+    public int getSelectedCardValue() {
+        return selectedValue;
+    }
 
     // UI
     public JLabel target1Label, target2Label;
@@ -16,11 +20,10 @@ public class playpage extends JFrame {
 
     // CARD STATE
     private CardUI currentSelectedCard = null;
-    
+
     private final Color COLOR_PANEL = new Color(30, 30, 30, 220);
     private final Color COLOR_ACCENT = new Color(120, 0, 0);
     private final Color COLOR_RED = new Color(180, 0, 0);
-
 
     public playpage(JFrame owner) {
         this.owner = owner;
@@ -103,8 +106,8 @@ public class playpage extends JFrame {
         JButton shopBtn = createStyledButton("SHOP", COLOR_ACCENT);
         shopBtn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 60));
 
-        shopBtn.addActionListener(e ->
-                System.out.println("SHOP pressed")
+        shopBtn.addActionListener(e
+                -> System.out.println("SHOP pressed")
         );
 
         assetP.addContentRow(Box.createVerticalStrut(15));
@@ -161,17 +164,18 @@ public class playpage extends JFrame {
 
                     System.out.println("Card " + value + " clicked");
 
-                    if (isSelected) deselectCard();
-                    else {
-                        if (currentSelectedCard != null)
+                    if (isSelected) {
+                        deselectCard();
+                    } else {
+                        if (currentSelectedCard != null) {
                             currentSelectedCard.deselectCard();
+                        }
                         selectCard();
                     }
                 }
             });
         }
 
-        
         private void selectCard() {
             isSelected = true;
             currentSelectedCard = this;
@@ -179,7 +183,6 @@ public class playpage extends JFrame {
             repaint();
         }
 
-        
         private void deselectCard() {
             isSelected = false;
 
@@ -216,8 +219,8 @@ public class playpage extends JFrame {
             int y = (getHeight() + fm.getAscent()) / 2 - 5;
 
             // Shadow
-            g2.setColor(new Color(0,0,0,150));
-            g2.drawString(text, x+2, y+2);
+            g2.setColor(new Color(0, 0, 0, 150));
+            g2.drawString(text, x + 2, y + 2);
 
             // Text
             g2.setColor(Color.WHITE);
@@ -227,7 +230,7 @@ public class playpage extends JFrame {
             if (isSelected) {
                 g2.setColor(COLOR_RED);
                 g2.setStroke(new BasicStroke(3));
-                g2.drawRoundRect(2, 2, getWidth()-4, getHeight()-4, arc, arc);
+                g2.drawRoundRect(2, 2, getWidth() - 4, getHeight() - 4, arc, arc);
             }
 
             g2.dispose();
@@ -278,7 +281,6 @@ public class playpage extends JFrame {
             System.exit(0);
         });
 
-
         p.add(backBtn, BorderLayout.WEST);
         p.add(close, BorderLayout.EAST);
 
@@ -321,7 +323,9 @@ public class playpage extends JFrame {
             g2.fillRoundRect(0, 0, getWidth(), getHeight(), 30, 30);
 
             g2.setColor(Color.WHITE);
-            if (!title.isEmpty()) g2.drawString(title, 25, 30);
+            if (!title.isEmpty()) {
+                g2.drawString(title, 25, 30);
+            }
 
             g2.dispose();
         }
@@ -340,8 +344,8 @@ public class playpage extends JFrame {
             g.drawImage(bgImg, 0, 0, getWidth(), getHeight(), this);
 
             // Dark overlay for readability
-            g.setColor(new Color(0,0,0,120));
-            g.fillRect(0,0,getWidth(),getHeight());
+            g.setColor(new Color(0, 0, 0, 120));
+            g.fillRect(0, 0, getWidth(), getHeight());
         }
     }
 
@@ -359,18 +363,18 @@ public class playpage extends JFrame {
 
                 // Shadow layer
                 g2.setColor(color.darker());
-                g2.fillRoundRect(0, 2, getWidth(), getHeight()-2, arc, arc);
+                g2.fillRoundRect(0, 2, getWidth(), getHeight() - 2, arc, arc);
 
                 // Main button
                 g2.setColor(getBackground());
-                g2.fillRoundRect(0, 0, getWidth(), getHeight()-4, arc, arc);
+                g2.fillRoundRect(0, 0, getWidth(), getHeight() - 4, arc, arc);
 
                 // Text
                 g2.setColor(Color.WHITE);
                 FontMetrics fm = g2.getFontMetrics();
 
-                int x = (getWidth()-fm.stringWidth(getText()))/2;
-                int y = (getHeight()+fm.getAscent())/2 - 5;
+                int x = (getWidth() - fm.stringWidth(getText())) / 2;
+                int y = (getHeight() + fm.getAscent()) / 2 - 5;
 
                 g2.drawString(getText(), x, y);
 
@@ -388,8 +392,13 @@ public class playpage extends JFrame {
 
         // Hover effect
         btn.addMouseListener(new MouseAdapter() {
-            public void mouseEntered(MouseEvent e) { btn.setBackground(color.brighter()); }
-            public void mouseExited(MouseEvent e) { btn.setBackground(color); }
+            public void mouseEntered(MouseEvent e) {
+                btn.setBackground(color.brighter());
+            }
+
+            public void mouseExited(MouseEvent e) {
+                btn.setBackground(color);
+            }
         });
 
         return btn;

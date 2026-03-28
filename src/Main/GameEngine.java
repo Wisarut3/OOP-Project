@@ -7,21 +7,21 @@ public class GameEngine implements Runnable {
     private final ArrayList<Player> playerList;
     private int cumulativeTotal;
     private boolean zero;
-    private GameServer server; // null = offline mode
+    private GameServer server;
 
-    // offline mode
+    // ── Network mode ──────────────────────────────────────────────────────
+    public GameEngine(List<Player> players, GameServer server) {
+        playerList = new ArrayList<>(players);
+        this.server = server;
+        init();
+    }
+
+    // ── Offline terminal (เดิม) ───────────────────────────────────────────
     public GameEngine() {
         playerList = new ArrayList<>();
         playerList.add(new Bot());
         playerList.add(new Bot());
         playerList.add(new Human());
-        init();
-    }
-
-    // network mode
-    public GameEngine(List<Player> players, GameServer server) {
-        playerList = new ArrayList<>(players);
-        this.server = server;
         init();
     }
 
@@ -32,11 +32,6 @@ public class GameEngine implements Runnable {
             p.setTarget(0, rand.nextInt(0, 11));
             p.setTarget(1, rand.nextInt(10, 21));
         }
-        for (int i = 0; i < playerList.size(); i++) {
-            System.out.println("Target of Player " + (i + 1)
-                    + " = " + playerList.get(i).getTarget()[0]
-                    + " and " + playerList.get(i).getTarget()[1]);
-        }
     }
 
     public void setZero() {
@@ -44,9 +39,9 @@ public class GameEngine implements Runnable {
         zero = true;
     }
 
-    public void addTotal(int score) {
+    public void addTotal(int s) {
         if (!zero) {
-            cumulativeTotal += score;
+            cumulativeTotal += s;
         }
     }
 
@@ -60,10 +55,7 @@ public class GameEngine implements Runnable {
 
     public void addScore(ArrayList<Player> sorted) {
         sorted.get(0).addScore(2);
-        System.out.println("Player " + (playerList.indexOf(sorted.get(0)) + 1) + " got 2 points");
         sorted.get(1).addScore(1);
-        System.out.println("Player " + (playerList.indexOf(sorted.get(1)) + 1) + " got 1 point");
-        System.out.println();
     }
 
     public void calculateScore() {
@@ -80,20 +72,25 @@ public class GameEngine implements Runnable {
     public void calculateRound(int roundNum) {
         cumulativeTotal = 0;
         StringBuilder log = new StringBuilder("--- Round " + roundNum + " ---\n");
-        for (Player p : playerList) {
+
+        for (int i = 0; i < playerList.size(); i++) {
+            Player p = playerList.get(i);
             Card c = p.selectMove();
+            String eff = c.getType() == null ? "None"
+                    : c.getType().getClass().getSimpleName();
+            log.append("P").append(i + 1).append(": card=").append(c.getValue())
+                    .append(" effect=").append(eff).append("\n");
             calculateEffect(p, c, c.getType());
             p.addMoney(5);
         }
         zero = false;
-        log.append("Total on table = ").append(cumulativeTotal).append("\n");
-        System.out.println(log);
+        log.append("Total = ").append(cumulativeTotal).append("\n");
         calculateScore();
 
         if (server != null) {
-            int[] allScores = playerList.stream().mapToInt(Player::getScore).toArray();
+            int[] scores = playerList.stream().mapToInt(Player::getScore).toArray();
             server.broadcastState(
-                    GameMessage.roundResult(cumulativeTotal, allScores, log.toString()));
+                    GameMessage.roundResult(cumulativeTotal, scores, log.toString()));
         }
     }
 
@@ -103,16 +100,14 @@ public class GameEngine implements Runnable {
             calculateRound(i);
         }
 
-        System.out.println("\nTotal score:");
         String[] names = new String[playerList.size()];
-        int[] finalScores = new int[playerList.size()];
+        int[] scores = new int[playerList.size()];
         for (int i = 0; i < playerList.size(); i++) {
             names[i] = "Player " + (i + 1);
-            finalScores[i] = playerList.get(i).getScore();
-            System.out.println(names[i] + " got " + finalScores[i] + " points");
+            scores[i] = playerList.get(i).getScore();
         }
         if (server != null) {
-            server.broadcastState(GameMessage.gameOver(names, finalScores));
+            server.broadcastState(GameMessage.gameOver(names, scores));
         }
     }
 

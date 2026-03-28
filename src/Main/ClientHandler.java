@@ -10,10 +10,12 @@ public class ClientHandler implements Runnable {
     private ObjectOutputStream out;
     private ObjectInputStream in;
 
-    // SynchronousQueue
+    // แยก queue ตาม phase
+    private final SynchronousQueue<GameMessage> lobbyQueue = new SynchronousQueue<>();
     private final SynchronousQueue<GameMessage> moveQueue = new SynchronousQueue<>();
 
     private volatile boolean running = true;
+    private String username = "?";
 
     public ClientHandler(Socket socket) {
         this.socket = socket;
@@ -22,53 +24,71 @@ public class ClientHandler implements Runnable {
             out.flush();
             in = new ObjectInputStream(socket.getInputStream());
         } catch (IOException e) {
-            System.err.println("[ClientHandler] Failed to open streams: " + e.getMessage());
+            System.err.println("[ClientHandler] Stream error: " + e.getMessage());
             running = false;
         }
     }
 
     @Override
     public void run() {
-        System.out.println("[ClientHandler] Client connected: " + socket.getInetAddress());
+        System.out.println("[ClientHandler] Connected: " + socket.getInetAddress());
         while (running) {
             try {
                 GameMessage msg = (GameMessage) in.readObject();
-                if (msg.getType() == GameMessage.Type.SEND_MOVE) {
-                    moveQueue.put(msg);
+                switch (msg.getType()) {
+                    case CREATE_ROOM, JOIN_ROOM ->
+                        lobbyQueue.put(msg);
+                    case SEND_MOVE ->
+                        moveQueue.put(msg);
+                    default -> {
+                    }
                 }
             } catch (EOFException | SocketException e) {
-                System.err.println("[ClientHandler] Client disconnected.");
+                System.out.println("[ClientHandler] " + username + " disconnected.");
                 running = false;
             } catch (Exception e) {
-                System.err.println("[ClientHandler] Error reading: " + e.getMessage());
+                System.err.println("[ClientHandler] Error: " + e.getMessage());
                 running = false;
             }
         }
         close();
     }
 
-    // ---- API ที่ GameEngine / GameServer
-    /**
-     * ส่ง GameMessage client
-     */
     public synchronized void send(GameMessage msg) {
         try {
             out.writeObject(msg);
             out.flush();
-            out.reset(); // reset object cache
+            out.reset();
         } catch (IOException e) {
-            System.err.println("[ClientHandler] Send failed: " + e.getMessage());
+            System.err.println("[ClientHandler] Send failed");
             running = false;
+        }
+    }
+
+    public GameMessage waitForLobby() {
+        try {
+            return lobbyQueue.take();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return null;
         }
     }
 
     public GameMessage waitForMove() {
         try {
-            return moveQueue.take(); // block
+            return moveQueue.take();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             return null;
         }
+    }
+
+    public void setUsername(String u) {
+        this.username = u;
+    }
+
+    public String getUsername() {
+        return username;
     }
 
     public boolean isRunning() {

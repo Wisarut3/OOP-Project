@@ -2,6 +2,7 @@ package Project_ui;
 
 import Main.Bot;
 import Main.Card;
+import Main.GameClient;
 import Main.Negative;
 import Main.Zero;
 
@@ -12,182 +13,254 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 
+/**
+ * GameUI — หน้าเกมที่ทำงานได้จริงทั้ง Solo และ Online
+ *
+ * Solo mode → สร้างผ่าน new GameUI(owner, null) แล้วจัดการ logic เอง Online
+ * mode → สร้างผ่าน new GameUI(owner, client) แล้วรับข้อมูลจาก GameClient
+ */
 public class GameUI extends JFrame {
 
-    // --- Game State Variables ---
-    private int cumulativeTotal = 0; // Total points on the table
-    private int currentRound = 1; // Current round number (1-5)
-    private boolean isZeroActive = false; // Flag to lock the total to 0 when Zero card is used
+    // ── Mode ──────────────────────────────────────────────────────────────
+    private final boolean isOnline;
+    private GameClient client; // null = solo
 
-    // Human Player Data
-    private int playerMoney = 0; 
+    // ── Solo game state ───────────────────────────────────────────────────
+    private int cumulativeTotal = 0;
+    private int currentRound = 1;
+    private boolean isZeroActive = false;
+
+    private int playerMoney = 0;
     private int playerScore = 0;
-    private int[] playerTargets = new int[2]; // Two target numbers for the player [cite: 10]
-    private List<String> playerInventory = new ArrayList<>(); // Store purchased items
-    
-    // Bot Players (using objects from Main package) [cite: 10]
-    private Bot bot1;
-    private Bot bot2;
-    
-    // Tracking bot money for UI display
-    private int bot1MoneyUI = 0;
-    private int bot2MoneyUI = 0;
+    private int[] playerTargets = new int[2];
+    private List<String> playerInventory = new ArrayList<>();
 
-    // Interaction Selection State
-    private JButton selectedCardBtn = null; // Current selected card button
-    private String selectedUseEffect = "None"; // Current selected effect to use
-    
-    // UI Components
-    private JLabel totalLabel, targetLabel, roundLabel, totalTitle;
-    private JLabel statsLabel, bot1Label, bot2Label; // Labels for player and bot stats
+    private Bot bot1, bot2;
+    private int bot1MoneyUI = 0, bot2MoneyUI = 0;
+
+    // ── Online game state (sync จาก server) ──────────────────────────────
+    private int[] onlineHand = {};
+    private String[] onlineEffects = {};
+    private int onlineMoney = 0;
+    private int onlineScore = 0;
+    private int[] onlineTargets = {0, 0};
+    private boolean isMyTurn = false;
+    private String pendingBuy = "None";
+
+    // ── Shared UI state ───────────────────────────────────────────────────
+    private JButton selectedCardBtn = null;
+    private int selectedCardIdx = -1;
+    private String selectedUseEffect = "None";
+
+    // ── UI Components ─────────────────────────────────────────────────────
+    private JLabel totalLabel, targetLabel, roundLabel;
+    private JLabel statsLabel, bot1Label, bot2Label;
+    private JLabel onlineStatusLabel;
     private JButton buyNegBtn, buyZeroBtn, useNegBtn, useZeroBtn, playBtn;
-    private JButton[] handCards = new JButton[5];
+    private JButton[] handCards;
+    private JPanel handPanel;
 
-    public GameUI(JFrame owner) {
-        // Setup Fullscreen Window 
+    // ─────────────────────────────────────────────────────────────────────
+    // CONSTRUCTOR
+    // ─────────────────────────────────────────────────────────────────────
+    public GameUI(JFrame owner, GameClient client) {
+        this.client = client;
+        this.isOnline = (client != null);
+
         setUndecorated(true);
         setExtendedState(JFrame.MAXIMIZED_BOTH);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
 
-        // Set Background Panel
         BackgroundPanel bg = new BackgroundPanel();
         setContentPane(bg);
         bg.setLayout(null);
 
-        // Initialize bots and targets
-        initializeGameLogic();
+        buildUI(bg, owner);
 
-        // --- Header Stats (Top Left) ---
-        statsLabel = createLeftTextLabel("", 18);
-        bot1Label = createLeftTextLabel("", 16);
-        bot2Label = createLeftTextLabel("", 16);
-        
+        if (!isOnline) {
+            initSoloLogic();
+            refreshSoloUI();
+        } else {
+            // online: รอ server ส่ง GAME_STATE มา
+            onlineStatusLabel.setText("Waiting for game start...");
+            disableAllActions();
+        }
+
+        bg.addComponentListener(new java.awt.event.ComponentAdapter() {
+            @Override
+            public void componentResized(java.awt.event.ComponentEvent e) {
+                layoutComponents(bg.getWidth(), bg.getHeight());
+            }
+        });
+    }
+
+    // ─────────────────────────────────────────────────────────────────────
+    // BUILD UI
+    // ─────────────────────────────────────────────────────────────────────
+    private void buildUI(JPanel bg, JFrame owner) {
+
+        statsLabel = label("", 18, Color.WHITE);
+        bot1Label = label("", 16, Color.WHITE);
+        bot2Label = label("", 16, Color.WHITE);
         bg.add(statsLabel);
         bg.add(bot1Label);
         bg.add(bot2Label);
 
-        // --- Target & Round Info ---
-        targetLabel = createTextLabel("", 24);
-        roundLabel = createTextLabel("", 20);
+        onlineStatusLabel = label("", 16, new Color(255, 220, 80));
+        bg.add(onlineStatusLabel);
+
+        targetLabel = centerLabel("", 24);
+        roundLabel = centerLabel("Round: 1/5", 20);
+        totalLabel = centerLabel("0", 100);
+        JLabel totalTitle = centerLabel("TABLE TOTAL", 24);
         bg.add(targetLabel);
         bg.add(roundLabel);
-
-        // --- Table Display ---
-        totalTitle = createTextLabel("TABLE TOTAL", 24);
-        totalLabel = createTextLabel("0", 100);
         bg.add(totalTitle);
         bg.add(totalLabel);
 
-        // --- Shop Buttons (Right) ---
-        buyNegBtn = createStyledButton("Buy (-)", new Color(160, 50, 50));
-        buyZeroBtn = createStyledButton("Buy (0)", new Color(160, 50, 50));
-        buyNegBtn.addActionListener(e -> buyItem("Negative"));
-        buyZeroBtn.addActionListener(e -> buyItem("Zero"));
+        // Shop buttons
+        buyNegBtn = styledBtn("Buy (–)  5 coins", new Color(160, 50, 50));
+        buyZeroBtn = styledBtn("Buy (0)  5 coins", new Color(160, 50, 50));
+        buyNegBtn.addActionListener(e -> doBuy("Negative"));
+        buyZeroBtn.addActionListener(e -> doBuy("Zero"));
         bg.add(buyNegBtn);
         bg.add(buyZeroBtn);
 
-        // --- Player Hand (Bottom) ---
-        for (int i = 0; i < 5; i++) {
-            handCards[i] = createCardButton(String.valueOf(i + 1));
-            bg.add(handCards[i]);
-        }
-
-        // --- Action Buttons (Equip & Play) ---
-        useNegBtn = createStyledButton("Use (-)", new Color(180, 120, 0));
-        useZeroBtn = createStyledButton("Use (0)", new Color(180, 120, 0));
-        playBtn = createStyledButton("PLAY CARD", new Color(40, 150, 40)); 
-        
+        // Effect use buttons
+        useNegBtn = styledBtn("Use (–)", new Color(180, 120, 0));
+        useZeroBtn = styledBtn("Use (0)", new Color(180, 120, 0));
         useNegBtn.addActionListener(e -> toggleEffect("Negative", useNegBtn, useZeroBtn));
         useZeroBtn.addActionListener(e -> toggleEffect("Zero", useZeroBtn, useNegBtn));
-        playBtn.addActionListener(e -> processTurn());
-
         bg.add(useNegBtn);
         bg.add(useZeroBtn);
-        bg.add(playBtn);
 
-        // Close Application Button
-        JButton closeBtn = new JButton("✕");
-        closeBtn.setBackground(new Color(255, 80, 80));
-        closeBtn.setForeground(Color.WHITE);
-        closeBtn.addActionListener(e -> {
-            owner.setVisible(true);
-            this.dispose();
-        });
-        bg.add(closeBtn);
-
-        // Handle Responsive Layout 
-        bg.addComponentListener(new java.awt.event.ComponentAdapter() {
-            @Override
-            public void componentResized(java.awt.event.ComponentEvent evt) {
-                int w = bg.getWidth(), h = bg.getHeight();
-                closeBtn.setBounds(w - 50, 10, 40, 40);
-                
-                statsLabel.setBounds(30, 20, 300, 30);
-                bot1Label.setBounds(30, 50, 300, 30);
-                bot2Label.setBounds(30, 80, 300, 30);
-                
-                targetLabel.setBounds((w - 300) / 2, 20, 300, 40);
-                roundLabel.setBounds(w - 200, 20, 150, 40);
-                
-                totalTitle.setBounds((w - 200) / 2, h / 2 - 140, 200, 40);
-                totalLabel.setBounds((w - 200) / 2, h / 2 - 100, 200, 120);
-                
-                buyNegBtn.setBounds(w - 180, h / 2 - 40, 150, 50);
-                buyZeroBtn.setBounds(w - 180, h / 2 + 30, 150, 50);
-                
-                for (int i = 0; i < 5; i++) handCards[i].setBounds((w - 580) / 2 + (i * 120), h - 180, 100, 150);
-                
-                useNegBtn.setBounds((w - 520) / 2, h - 250, 150, 50);
-                useZeroBtn.setBounds((w - 520) / 2 + 170, h - 250, 150, 50);
-                playBtn.setBounds((w - 520) / 2 + 340, h - 250, 180, 50);
+        // Play button
+        playBtn = styledBtn("▶  PLAY CARD", new Color(40, 150, 40));
+        playBtn.addActionListener(e -> {
+            if (isOnline) {
+                doOnlinePlay();
+            } else {
+                doSoloPlay();
             }
         });
-        refreshUI();
+        bg.add(playBtn);
+
+        // Hand panel (cards จะ rebuild ทุกรอบ)
+        handPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 10));
+        handPanel.setOpaque(false);
+        bg.add(handPanel);
+
+        // Close button
+        JButton close = new JButton("✕");
+        close.setBackground(new Color(255, 80, 80));
+        close.setForeground(Color.WHITE);
+        close.setFocusPainted(false);
+        close.setBorderPainted(false);
+        close.addActionListener(e -> {
+            if (owner != null) {
+                owner.setVisible(true);
+            }
+            dispose();
+        });
+        bg.add(close);
+        close.setBounds(0, 0, 40, 40); // จะถูก layout เองใน resize
+
+        // เก็บ reference close เพื่อ layout
+        bg.addComponentListener(new java.awt.event.ComponentAdapter() {
+            @Override
+            public void componentResized(java.awt.event.ComponentEvent e) {
+                close.setBounds(bg.getWidth() - 50, 10, 40, 40);
+            }
+        });
     }
 
-    // Initialize targets and bot instances [cite: 10]
-    private void initializeGameLogic() {
+    private void layoutComponents(int w, int h) {
+        statsLabel.setBounds(30, 20, 320, 28);
+        bot1Label.setBounds(30, 52, 320, 24);
+        bot2Label.setBounds(30, 76, 320, 24);
+        onlineStatusLabel.setBounds(30, 104, 500, 24);
+
+        targetLabel.setBounds((w - 320) / 2, 20, 320, 40);
+        roundLabel.setBounds(w - 220, 20, 180, 36);
+
+        // Table total (กลางจอ)
+        int cx = (w - 200) / 2;
+        getContentPane().getComponent(4).setBounds(cx, h / 2 - 150, 200, 40); // totalTitle
+        totalLabel.setBounds(cx, h / 2 - 110, 200, 120);
+
+        // Shop (ขวา)
+        buyNegBtn.setBounds(w - 190, h / 2 - 50, 165, 48);
+        buyZeroBtn.setBounds(w - 190, h / 2 + 10, 165, 48);
+
+        // Hand cards (ล่าง)
+        handPanel.setBounds((w - 620) / 2, h - 200, 620, 170);
+
+        // Action buttons (เหนือ hand)
+        useNegBtn.setBounds((w - 540) / 2, h - 265, 150, 48);
+        useZeroBtn.setBounds((w - 540) / 2 + 170, h - 265, 150, 48);
+        playBtn.setBounds((w - 540) / 2 + 345, h - 265, 200, 48);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────
+    // SOLO LOGIC
+    // ─────────────────────────────────────────────────────────────────────
+    private void initSoloLogic() {
         bot1 = new Bot();
         bot2 = new Bot();
-
         Random rand = new Random();
-        playerTargets[0] = rand.nextInt(11); // 0-10
-        playerTargets[1] = rand.nextInt(11) + 10; // 10-20
-        
-        bot1.setTarget(0, rand.nextInt(11)); 
+        playerTargets[0] = rand.nextInt(11);
+        playerTargets[1] = rand.nextInt(11) + 10;
+        bot1.setTarget(0, rand.nextInt(11));
         bot1.setTarget(1, rand.nextInt(11) + 10);
-        
-        bot2.setTarget(0, rand.nextInt(11)); 
+        bot2.setTarget(0, rand.nextInt(11));
         bot2.setTarget(1, rand.nextInt(11) + 10);
+        buildSoloHand();
     }
 
-    // Update screen text with current data
-    private void refreshUI() {
-        statsLabel.setText("Player 1 | Chips: " + playerMoney + " | Score: " + playerScore);
-        bot1Label.setText("Bot 1      | Chips: " + bot1MoneyUI + " | Score: " + bot1.getScore());
-        bot2Label.setText("Bot 2      | Chips: " + bot2MoneyUI + " | Score: " + bot2.getScore());
-        
-        targetLabel.setText("Targets: " + playerTargets[0] + " & " + playerTargets[1]);
+    private void buildSoloHand() {
+        handPanel.removeAll();
+        handCards = new JButton[5];
+        for (int i = 0; i < 5; i++) {
+            final int val = i + 1;
+            JButton btn = cardBtn(String.valueOf(val));
+            btn.addActionListener(e -> selectCard(btn, val, -1));
+            handCards[i] = btn;
+            handPanel.add(btn);
+        }
+        handPanel.revalidate();
+        handPanel.repaint();
+    }
+
+    private void refreshSoloUI() {
+        statsLabel.setText("You   | Chips: " + playerMoney + "  Score: " + playerScore
+                + "  Target: " + playerTargets[0] + " / " + playerTargets[1]);
+        bot1Label.setText("Bot 1 | Chips: " + bot1MoneyUI + "  Score: " + bot1.getScore());
+        bot2Label.setText("Bot 2 | Chips: " + bot2MoneyUI + "  Score: " + bot2.getScore());
         roundLabel.setText("Round: " + currentRound + " / 5");
         totalLabel.setText(String.valueOf(cumulativeTotal));
     }
 
-    // Purchase an item from the shop
-    private void buyItem(String itemName) {
+    private void doBuy(String item) {
+        if (isOnline) {
+            pendingBuy = item;
+            onlineStatusLabel.setText("Buy " + item);
+            return;
+        }
+        // solo
         if (playerMoney >= 5) {
             playerMoney -= 5;
-            playerInventory.add(itemName);
-            refreshUI();
-            JOptionPane.showMessageDialog(this, "Item " + itemName + " purchased successfully!");
+            playerInventory.add(item);
+            refreshSoloUI();
+            JOptionPane.showMessageDialog(this, "Buy" + item + "Success");
         } else {
-            JOptionPane.showMessageDialog(this, "Not enough chips! (Costs 5)");
+            JOptionPane.showMessageDialog(this, "Not enough chips (requires 5)");
         }
     }
 
-    // Select or deselect an item to use with a card
     private void toggleEffect(String effect, JButton clicked, JButton other) {
-        if (!playerInventory.contains(effect)) {
-            JOptionPane.showMessageDialog(this, "Item not in inventory!");
+        List<String> inv = isOnline ? java.util.Arrays.asList(onlineEffects) : playerInventory;
+        if (!inv.contains(effect) && !(isOnline && pendingBuy.equals(effect))) {
+            JOptionPane.showMessageDialog(this, "ไม่มี " + effect + " ใน inventory");
             return;
         }
         if (selectedUseEffect.equals(effect)) {
@@ -195,35 +268,31 @@ public class GameUI extends JFrame {
             clicked.setBackground(new Color(180, 120, 0));
         } else {
             selectedUseEffect = effect;
-            clicked.setBackground(Color.GREEN);
+            clicked.setBackground(new Color(50, 180, 50));
             other.setBackground(new Color(180, 120, 0));
         }
     }
 
-    // Process the player and bot moves for the current round [cite: 10]
-    private void processTurn() {
+    private void doSoloPlay() {
         if (selectedCardBtn == null) {
-            JOptionPane.showMessageDialog(this, "Please select a card first.");
+            JOptionPane.showMessageDialog(this, "Please select a card first");
             return;
         }
+        isZeroActive = false;
+        StringBuilder summary = new StringBuilder("--- Round " + currentRound + " ---\n\n");
 
-        isZeroActive = false; // Reset Zero effect for the new round
-        StringBuilder summary = new StringBuilder("--- Round " + currentRound + " Summary ---\n\n");
-
-        // 1. Process Human Player move
+        // Human move
         int val = Integer.parseInt(selectedCardBtn.getText());
         Card humanCard = new Card(val);
-        
-        if (selectedUseEffect.equals("Zero")) { 
-            humanCard.setType(new Zero()); 
-            playerInventory.remove("Zero"); 
-        } else if (selectedUseEffect.equals("Negative")) { 
-            humanCard.setType(new Negative()); 
-            playerInventory.remove("Negative"); 
+        if (selectedUseEffect.equals("Zero")) {
+            humanCard.setType(new Zero());
+            playerInventory.remove("Zero");
+        } else if (selectedUseEffect.equals("Negative")) {
+            humanCard.setType(new Negative());
+            playerInventory.remove("Negative");
         }
-        applyCardToTotal(humanCard, "You", summary);
+        applyCard(humanCard, "You", summary);
 
-        // Update UI state for cards and buttons
         selectedCardBtn.setEnabled(false);
         selectedCardBtn.setBackground(Color.DARK_GRAY);
         selectedCardBtn = null;
@@ -231,147 +300,336 @@ public class GameUI extends JFrame {
         useNegBtn.setBackground(new Color(180, 120, 0));
         useZeroBtn.setBackground(new Color(180, 120, 0));
 
-        // 2. Process Bot moves [cite: 10]
-        Card b1Card = bot1.selectMove();
-        if (b1Card.getType() != null) bot1MoneyUI -= 5;
-        applyCardToTotal(b1Card, "Bot 1", summary);
+        // Bot moves
+        Card b1 = bot1.selectMove();
+        if (b1.getType() != null) {
+            bot1MoneyUI -= 5;
+        }
+        applyCard(b1, "Bot 1", summary);
+        Card b2 = bot2.selectMove();
+        if (b2.getType() != null) {
+            bot2MoneyUI -= 5;
+        }
+        applyCard(b2, "Bot 2", summary);
 
-        Card b2Card = bot2.selectMove();
-        if (b2Card.getType() != null) bot2MoneyUI -= 5;
-        applyCardToTotal(b2Card, "Bot 2", summary);
+        summary.append("\n▶ Table total :  ").append(cumulativeTotal);
+        calcSoloScores();
 
-        summary.append("\n>>> Current Table Total: ").append(cumulativeTotal);
-        JOptionPane.showMessageDialog(this, summary.toString(), "Round Summary", JOptionPane.INFORMATION_MESSAGE);
-
-        // 3. Score calculation [cite: 10]
-        calculateRoundScores();
-        
-        // 4. Award chips and prepare for next round
         playerMoney += 5;
-        bot1.addMoney(5); 
-        bot1MoneyUI += 5; 
+        bot1.addMoney(5);
+        bot1MoneyUI += 5;
         bot2.addMoney(5);
-        bot2MoneyUI += 5; 
-
+        bot2MoneyUI += 5;
         currentRound++;
+
+        JOptionPane.showMessageDialog(this, summary.toString(), "Round Result", JOptionPane.INFORMATION_MESSAGE);
+
         if (currentRound > 5) {
-            showGameOver();
+            showSoloGameOver();
         } else {
-            refreshUI();
+            refreshSoloUI();
+            resetSoloHandButtons();
         }
     }
 
-    // Apply the card value and its effect to the table total
-    private void applyCardToTotal(Card c, String playerName, StringBuilder summary) {
-        summary.append("- ").append(playerName).append(" played card ").append(c.getValue());
-        
+    private void applyCard(Card c, String name, StringBuilder sb) {
+        sb.append("• ").append(name).append(" played ").append(c.getValue());
         if (c.getType() instanceof Zero) {
             cumulativeTotal = 0;
-            isZeroActive = true; // Lock table total
-            summary.append(" (Used ZERO: Total locked to 0)\n");
+            isZeroActive = true;
+            sb.append(" [ZERO → reset]\n");
         } else if (c.getType() instanceof Negative) {
-            if (!isZeroActive) cumulativeTotal -= c.getValue();
-            summary.append(" (Used NEGATIVE: Added as -").append(c.getValue()).append(")\n");
+            if (!isZeroActive) {
+                cumulativeTotal -= c.getValue();
+            }
+            sb.append(" [–").append(c.getValue()).append("]\n");
         } else {
-            if (!isZeroActive) cumulativeTotal += c.getValue();
-            summary.append("\n");
+            if (!isZeroActive) {
+                cumulativeTotal += c.getValue();
+            }
+            sb.append("\n");
         }
     }
 
-    // Calculate scores based on proximity to target numbers [cite: 10]
-    private void calculateRoundScores() {
-        int pDiff = Math.min(Math.abs(cumulativeTotal - playerTargets[0]), Math.abs(cumulativeTotal - playerTargets[1]));
-        int b1Diff = Math.min(Math.abs(cumulativeTotal - bot1.getTarget()[0]), Math.abs(cumulativeTotal - bot1.getTarget()[1]));
-        int b2Diff = Math.min(Math.abs(cumulativeTotal - bot2.getTarget()[0]), Math.abs(cumulativeTotal - bot2.getTarget()[1]));
+    private void calcSoloScores() {
+        int pD = Math.min(Math.abs(cumulativeTotal - playerTargets[0]), Math.abs(cumulativeTotal - playerTargets[1]));
+        int b1D = Math.min(Math.abs(cumulativeTotal - bot1.getTarget()[0]), Math.abs(cumulativeTotal - bot1.getTarget()[1]));
+        int b2D = Math.min(Math.abs(cumulativeTotal - bot2.getTarget()[0]), Math.abs(cumulativeTotal - bot2.getTarget()[1]));
 
-        class Result implements Comparable<Result> {
-            String name; int diff;
-            Result(String n, int d) { name = n; diff = d; }
-            public int compareTo(Result o) { return Integer.compare(this.diff, o.diff); }
+        record R(String n, int d) implements Comparable<R> {
+
+            public int compareTo(R o) {
+                return Integer.compare(d, o.d);
+            }
         }
-
-        List<Result> results = new ArrayList<>();
-        results.add(new Result("Player", pDiff));
-        results.add(new Result("Bot1", b1Diff));
-        results.add(new Result("Bot2", b2Diff));
-        Collections.sort(results); 
-
-        // Award points based on ranking (2 for first, 1 for second) [cite: 10]
+        List<R> rs = new ArrayList<>(List.of(new R("P", pD), new R("B1", b1D), new R("B2", b2D)));
+        Collections.sort(rs);
         for (int i = 0; i < 3; i++) {
             int pts = (i == 0) ? 2 : (i == 1) ? 1 : 0;
-            String winner = results.get(i).name;
-            if (winner.equals("Player")) playerScore += pts;
-            else if (winner.equals("Bot1")) bot1.addScore(pts); 
-            else if (winner.equals("Bot2")) bot2.addScore(pts);
+            switch (rs.get(i).n()) {
+                case "P" ->
+                    playerScore += pts;
+                case "B1" ->
+                    bot1.addScore(pts);
+                case "B2" ->
+                    bot2.addScore(pts);
+            }
         }
     }
 
-    // Final game over summary and exit
-    private void showGameOver() {
-        String msg = "===== GAME OVER! =====\n\n"
-                   + "Your Score : " + playerScore + "\n"
-                   + "Bot 1 Score : " + bot1.getScore() + "\n"
-                   + "Bot 2 Score : " + bot2.getScore() + "\n\n";
-
-        int max = Math.max(playerScore, Math.max(bot1.getScore(), bot2.getScore()));
-        if (playerScore == max) {
-            msg += "CONGRATULATIONS! YOU WIN!";
-        } else {
-            msg += "DEFEAT! Better luck next time.";
+    private void resetSoloHandButtons() {
+        for (JButton b : handCards) {
+            if (b.isEnabled()) {
+                b.setBackground(new Color(180, 30, 30));
+            }
         }
+    }
 
-        JOptionPane.showMessageDialog(this, msg, "Final Results", JOptionPane.INFORMATION_MESSAGE);
+    private void showSoloGameOver() {
+        int max = Math.max(playerScore, Math.max(bot1.getScore(), bot2.getScore()));
+        String msg = "===== GAME OVER =====\n\n"
+                + "You have   : " + playerScore + " points\n"
+                + "Bot 1 have : " + bot1.getScore() + " points\n"
+                + "Bot 2 have : " + bot2.getScore() + " points\n\n"
+                + (playerScore == max ? "🏆 You Win!!" : "You lost. Better luck next time.");
+        JOptionPane.showMessageDialog(this, msg, "Game Over", JOptionPane.INFORMATION_MESSAGE);
         System.exit(0);
     }
 
-    // UI Helper for left-aligned labels
-    private JLabel createLeftTextLabel(String text, int size) {
-        JLabel l = new JLabel(text, SwingConstants.LEFT);
-        l.setForeground(Color.WHITE);
-        l.setFont(new Font("Segoe UI", Font.BOLD, size));
+    // ─────────────────────────────────────────────────────────────────────
+    // ONLINE CALLBACKS (เรียกจาก GameClient บน listener thread)
+    // ─────────────────────────────────────────────────────────────────────
+    /**
+     * server ส่ง GAME_STATE มา
+     */
+    public void onGameState(int[] targets, int money, int score,
+            int[] hand, String[] effects) {
+        SwingUtilities.invokeLater(() -> {
+            onlineTargets = targets;
+            onlineMoney = money;
+            onlineScore = score;
+            onlineHand = hand;
+            onlineEffects = effects;
+            pendingBuy = "None";
+            selectedUseEffect = "None";
+            selectedCardIdx = -1;
+
+            statsLabel.setText("คุณ | Chips: " + money + "  Score: " + score
+                    + "  Target: " + targets[0] + " / " + targets[1]);
+            totalLabel.setText(String.valueOf(cumulativeTotal));
+            buildOnlineHand();
+            disableAllActions();
+        });
+    }
+
+    /**
+     * server ส่ง REQUEST_MOVE มา
+     */
+    public void onRequestMove(GameClient gc) {
+        SwingUtilities.invokeLater(() -> {
+            isMyTurn = true;
+            onlineStatusLabel.setText("🎯 ถึงตาคุณ! เลือกไพ่แล้วกด PLAY CARD");
+            enableActions();
+        });
+    }
+
+    /**
+     * server ส่ง ROUND_RESULT มา
+     */
+    public void onRoundResult(int total, int[] scores, String log) {
+        SwingUtilities.invokeLater(() -> {
+            cumulativeTotal = total;
+            totalLabel.setText(String.valueOf(total));
+            isMyTurn = false;
+            disableAllActions();
+            onlineStatusLabel.setText("รอบจบ — Total: " + total);
+
+            StringBuilder sb = new StringBuilder(log + "\nScores:\n");
+            for (int i = 0; i < scores.length; i++) {
+                sb.append("P").append(i + 1).append(": ").append(scores[i]).append("  ");
+            }
+            JOptionPane.showMessageDialog(this, sb.toString(), "ผลรอบ", JOptionPane.INFORMATION_MESSAGE);
+        });
+    }
+
+    /**
+     * server ส่ง GAME_OVER มา
+     */
+    public void onGameOver(String[] names, int[] scores) {
+        SwingUtilities.invokeLater(() -> {
+            int max = java.util.Arrays.stream(scores).max().getAsInt();
+            StringBuilder sb = new StringBuilder("===== GAME OVER =====\n\n");
+            for (int i = 0; i < names.length; i++) {
+                sb.append(names[i]).append(": ").append(scores[i]).append(" pts")
+                        .append(scores[i] == max ? " 🏆" : "").append("\n");
+            }
+            JOptionPane.showMessageDialog(this, sb.toString(), "จบเกม", JOptionPane.INFORMATION_MESSAGE);
+            System.exit(0);
+        });
+    }
+
+    // ── Online play ───────────────────────────────────────────────────────
+    private void doOnlinePlay() {
+        if (selectedCardIdx < 0) {
+            JOptionPane.showMessageDialog(this, "กรุณาเลือกไพ่ก่อน");
+            return;
+        }
+        if (!isMyTurn) {
+            return;
+        }
+        isMyTurn = false;
+        disableAllActions();
+        onlineStatusLabel.setText("ส่ง move แล้ว รอผู้เล่นอื่น...");
+        client.sendMove(selectedCardIdx, pendingBuy, selectedUseEffect);
+        pendingBuy = "None";
+        selectedUseEffect = "None";
+        selectedCardIdx = -1;
+    }
+
+    // ── Build online hand ─────────────────────────────────────────────────
+    private void buildOnlineHand() {
+        handPanel.removeAll();
+        handCards = new JButton[onlineHand.length];
+        for (int i = 0; i < onlineHand.length; i++) {
+            final int idx = i;
+            final int val = onlineHand[i];
+            JButton btn = cardBtn(String.valueOf(val));
+            btn.addActionListener(e -> selectCard(btn, val, idx));
+            handCards[i] = btn;
+            handPanel.add(btn);
+        }
+        handPanel.revalidate();
+        handPanel.repaint();
+    }
+
+    // ── Card selection ────────────────────────────────────────────────────
+    private void selectCard(JButton btn, int val, int idx) {
+        if (isOnline && !isMyTurn) {
+            return;
+        }
+        if (selectedCardBtn != null && selectedCardBtn != btn && selectedCardBtn.isEnabled()) {
+            selectedCardBtn.setBackground(new Color(180, 30, 30));
+        }
+        selectedCardBtn = btn;
+        selectedCardIdx = idx;
+        btn.setBackground(new Color(255, 160, 30));
+    }
+
+    // ── Enable / Disable ──────────────────────────────────────────────────
+    private void enableActions() {
+        buyNegBtn.setEnabled(true);
+        buyZeroBtn.setEnabled(true);
+        useNegBtn.setEnabled(true);
+        useZeroBtn.setEnabled(true);
+        playBtn.setEnabled(true);
+        if (handCards != null) {
+            for (JButton b : handCards) {
+                b.setEnabled(true);
+            }
+        }
+    }
+
+    private void disableAllActions() {
+        buyNegBtn.setEnabled(false);
+        buyZeroBtn.setEnabled(false);
+        useNegBtn.setEnabled(false);
+        useZeroBtn.setEnabled(false);
+        playBtn.setEnabled(false);
+        if (handCards != null) {
+            for (JButton b : handCards) {
+                b.setEnabled(false);
+            }
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────
+    // UI HELPERS
+    // ─────────────────────────────────────────────────────────────────────
+    private JLabel label(String t, int s, Color c) {
+        JLabel l = new JLabel(t);
+        l.setFont(new Font("Segoe UI", Font.BOLD, s));
+        l.setForeground(c);
         return l;
     }
 
-    // UI Helper for center-aligned labels
-    private JLabel createTextLabel(String text, int size) {
-        JLabel l = new JLabel(text, SwingConstants.CENTER);
+    private JLabel centerLabel(String t, int s) {
+        JLabel l = new JLabel(t, SwingConstants.CENTER);
+        l.setFont(new Font("Segoe UI", Font.BOLD, s));
         l.setForeground(Color.WHITE);
-        l.setFont(new Font("Segoe UI", Font.BOLD, size));
         return l;
     }
 
-    // UI Helper for card hand buttons
-    private JButton createCardButton(String text) {
-        JButton b = createStyledButton(text, new Color(180, 30, 30));
-        b.setFont(new Font("Segoe UI", Font.BOLD, 40));
-        b.addActionListener(e -> {
-            if (selectedCardBtn != null && selectedCardBtn.isEnabled()) 
-                selectedCardBtn.setBackground(new Color(180, 30, 30));
-            selectedCardBtn = b;
-            b.setBackground(new Color(255, 120, 120));
+    private JButton styledBtn(String t, Color c) {
+        JButton b = new JButton(t) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(isEnabled() ? getBackground() : getBackground().darker());
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 30, 30);
+                g2.setColor(Color.WHITE);
+                FontMetrics fm = g2.getFontMetrics();
+                g2.drawString(getText(), (getWidth() - fm.stringWidth(getText())) / 2, (getHeight() + fm.getAscent()) / 2 - 4);
+                g2.dispose();
+            }
+        };
+        b.setBackground(c);
+        b.setForeground(Color.WHITE);
+        b.setFont(new Font("Segoe UI", Font.BOLD, 15));
+        b.setFocusPainted(false);
+        b.setBorderPainted(false);
+        b.setContentAreaFilled(false);
+        b.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        b.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseEntered(java.awt.event.MouseEvent e) {
+                if (b.isEnabled()) {
+                    b.setBackground(c.brighter());
+                }
+            }
+
+            public void mouseExited(java.awt.event.MouseEvent e) {
+                b.setBackground(c);
+            }
         });
         return b;
     }
 
-    // Generic styled button helper
-    private JButton createStyledButton(String text, Color c) {
-        JButton b = new JButton(text);
-        b.setBackground(c);
+    private JButton cardBtn(String val) {
+        JButton b = new JButton(val) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(isEnabled() ? getBackground() : Color.DARK_GRAY);
+                g2.fillRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 16, 16);
+                g2.setColor(Color.WHITE);
+                g2.setFont(new Font("Segoe UI", Font.BOLD, 38));
+                FontMetrics fm = g2.getFontMetrics();
+                String txt = getText();
+                g2.drawString(txt, (getWidth() - fm.stringWidth(txt)) / 2, (getHeight() + fm.getAscent()) / 2 - 8);
+                g2.dispose();
+            }
+        };
+        b.setPreferredSize(new Dimension(95, 145));
+        b.setBackground(new Color(180, 30, 30));
         b.setForeground(Color.WHITE);
-        b.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        b.setFont(new Font("Segoe UI", Font.BOLD, 38));
         b.setFocusPainted(false);
         b.setBorderPainted(false);
+        b.setContentAreaFilled(false);
+        b.setCursor(new Cursor(Cursor.HAND_CURSOR));
         return b;
     }
 
-    // Custom background panel with image 
     class BackgroundPanel extends JPanel {
-        Image bgImg = new ImageIcon("loginbg.png").getImage();
+
+        Image bg = new ImageIcon("loginbg.png").getImage();
+
         @Override
         protected void paintComponent(Graphics g) {
             super.paintComponent(g);
-            g.drawImage(bgImg, 0, 0, getWidth(), getHeight(), this);
-            g.setColor(new Color(0, 0, 0, 180));
+            g.drawImage(bg, 0, 0, getWidth(), getHeight(), this);
+            g.setColor(new Color(0, 0, 0, 170));
             g.fillRect(0, 0, getWidth(), getHeight());
         }
     }
