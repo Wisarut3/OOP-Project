@@ -103,6 +103,7 @@ public class GameUI extends JFrame {
         bg.add(handPanel);
 
         JButton close = new JButton("✕");
+        close.setMargin(new Insets(0, 0, 0, 0));
         close.setBackground(new Color(255, 80, 80));
         close.setForeground(Color.WHITE);
         close.setFocusPainted(false);
