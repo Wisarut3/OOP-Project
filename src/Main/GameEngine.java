@@ -46,6 +46,9 @@ public class GameEngine implements Runnable {
     public void addTotal(int s) {
         if (!zero) {
             cumulativeTotal += s;
+            if(cumulativeTotal <= 0){
+                cumulativeTotal = 0;
+            }
         }
     }
 

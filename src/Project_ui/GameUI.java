@@ -29,6 +29,7 @@ public class GameUI extends JFrame {
     private JButton buyNegBtn, buyZeroBtn, useNegBtn, useZeroBtn, playBtn;
     private JButton[] handCards;
     private JPanel handPanel;
+    public int round = 0;
 
     public GameUI(JFrame owner, GameClient client, String username) {
         this.username = username;
@@ -72,7 +73,7 @@ public class GameUI extends JFrame {
         bg.add(onlineStatusLabel);
 
         targetLabel = centerLabel("", 24);
-        roundLabel = centerLabel("Round: 1/5", 20);
+        roundLabel = centerLabel("Round: " + String.valueOf(round) + "/5", 20);
         totalLabel = centerLabel("0", 100);
         totalTitleLabel = centerLabel("TABLE TOTAL", 24);
         bg.add(targetLabel);
@@ -124,7 +125,7 @@ public class GameUI extends JFrame {
     }
 
     private void layoutComponents(int w, int h) {
-        statsLabel.setBounds(30, 20, 320, 28);
+        statsLabel.setBounds(30, 20, 400, 28);
         bot1Label.setBounds(30, 52, 320, 24);
         bot2Label.setBounds(30, 76, 320, 24);
         onlineStatusLabel.setBounds(30, 104, 500, 24);
@@ -225,7 +226,7 @@ public class GameUI extends JFrame {
     // CALLBACKS (สำหรับให้ Engine และ Client เรียกมาอัปเดตจอ)
     // ─────────────────────────────────────────────────────────────────────
 
-    //Get data from GameEngine after using a card
+    //Get data from GameEngine
     public void onGameState(int[] targets, int money, int score, int[] hand, String[] effects) {
         SwingUtilities.invokeLater(() -> {
             onlineTargets = targets;
@@ -234,7 +235,8 @@ public class GameUI extends JFrame {
             pendingBuy = "None";
             selectedUseEffect = "None";
             selectedCardIdx = -1;
-
+            
+            roundLabel.setText("Round: " + String.valueOf(++round) + "/5");
             statsLabel.setText(username + " | Chips: " + money + "  Score: " + score + "  Target: " + targets[0] + " / " + targets[1]);
             totalLabel.setText(String.valueOf(currentTableTotal));
             buildOnlineHand();
