@@ -112,7 +112,7 @@ public class GameUI extends JFrame {
             dispose();
         });
         bg.add(close);
-        close.setBounds(0, 0, 40, 40);
+        close.setBounds(bg.getWidth() - 50, 10, 50, 40);
 
         bg.addComponentListener(new java.awt.event.ComponentAdapter() {
             @Override

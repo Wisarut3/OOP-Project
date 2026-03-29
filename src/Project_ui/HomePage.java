@@ -43,7 +43,7 @@ public class HomePage extends JFrame {
                 int w = bg.getWidth(), h = bg.getHeight();
                 userLabel.setBounds(0, 0, 220, 50);
                 winLabel.setBounds(w - 220, 0, 220, 50);
-                close.setBounds(w - 50, 60, 40, 40);
+                close.setBounds(w - 50, 10, 50, 40);
 
                 int px = (w - pw) / 2, py = (h - ph) / 2 + 60;
                 panel.setBounds(px, py, pw, ph);

@@ -67,7 +67,7 @@ public class RoomCreate extends JFrame {
             @Override
             public void componentResized(java.awt.event.ComponentEvent e) {
                 int w = bg.getWidth(), h = bg.getHeight();
-                close.setBounds(w - 50, 10, 40, 40);
+                close.setBounds(w - 50, 10, 50, 40);
                 back.setBounds(10, 10, 100, 36);
 
                 int px = (w - pw) / 2, py = (h - ph) / 2 + 40;
